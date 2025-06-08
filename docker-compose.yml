@@ -6,7 +6,6 @@ services:
     volumes:
       - ./crawling_data:/app/crawling_data
       - ./logs:/app/logs
-      - ./user_profile_data:/app/user_profile_data
     environment:
       - BASE_URL=${BASE_URL:-http://localhost:1010}
     network_mode: "host" # This allows the container to access the host network

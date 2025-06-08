@@ -272,7 +272,7 @@ def random_crawling(driver: webdriver.Chrome, is_card: bool = False) -> None:
         # Start from top
         current_position = 0
         
-        if random.random() < 0.5:
+        if random.random() < 0.3:
             while current_position < page_height:
                 # Random scroll amount (between 100 and 300 pixels)
                 scroll_amount = random.randint(100, 300)
@@ -300,7 +300,7 @@ def random_crawling(driver: webdriver.Chrome, is_card: bool = False) -> None:
                 
                 # Occasionally pause longer (10% chance)
                 if random.random() < 0.1:
-                    time.sleep(random.uniform(3, 7))
+                    time.sleep(random.uniform(2, 5))
                 
     except Exception as e:
         logger.error(f"Error during random crawling: {str(e)}")
