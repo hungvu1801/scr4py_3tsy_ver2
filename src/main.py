@@ -35,11 +35,12 @@ def card_scraping(driver: webdriver.Chrome, url: str, numpage: int) -> Generator
     current_page = 0
     current_url = url
     driver.get(current_url)
-    random_crawling(driver, is_card=True)
+    # random_crawling(driver, is_card=True)
+    time.sleep(random.uniform(2, 5))
+    
     
     # Store the parent window handle
     parent_window = driver.current_window_handle
-    
     while current_page < numpage:
         current_page += 1
         
@@ -55,7 +56,7 @@ def card_scraping(driver: webdriver.Chrome, url: str, numpage: int) -> Generator
             if not items:
                 logger.warning(f"No items found on page {current_page}")
                 break
-            
+        #############################################################################################################
             for i in range(len(items)):
                 try:
                     items = driver.find_elements(By.XPATH, "//div[contains(@class, 'responsive-listing-grid')]/div")
@@ -96,16 +97,16 @@ def card_scraping(driver: webdriver.Chrome, url: str, numpage: int) -> Generator
                     driver.switch_to.window(parent_window)
                     time.sleep(random.uniform(2, 5))
             
-            # Check for next page
+            ## Check for next page
             try:
                 # Scroll to bottom to ensure pagination is visible
-                driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+                # driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
                 time.sleep(2)  # Wait for any lazy-loaded content
                 
                 next_url = get_next_page_url(driver)
                 if next_url:
                     current_url = next_url
-                    driver.get(current_url)
+                    # driver.get(current_url)
                     logger.info(f"Moving to next page: {next_url}")
                 else:
                     logger.info("Reached last page or no next page found")
@@ -149,6 +150,7 @@ def get_next_page_url(driver: webdriver.Chrome) -> Optional[str]:
         if not disabled_links:
             next_page_link = last_elem.find_element(By.XPATH, ".//a")
             last_elem.click()
+            time.sleep(random.uniform(1, 2))
             return next_page_link.get_attribute("href")
         
         return None
@@ -272,7 +274,7 @@ def random_crawling(driver: webdriver.Chrome, is_card: bool = False) -> None:
         # Start from top
         current_position = 0
         
-        if random.random() < 0.3:
+        if random.random() < 0.2:
             while current_position < page_height:
                 # Random scroll amount (between 100 and 300 pixels)
                 scroll_amount = random.randint(100, 300)
@@ -305,60 +307,38 @@ def random_crawling(driver: webdriver.Chrome, is_card: bool = False) -> None:
     except Exception as e:
         logger.error(f"Error during random crawling: {str(e)}")
 
-def main() -> None:
-    """Main function to run the scraper."""
-    if len(sys.argv) < 3:
-        print("Usage: python main.py <shop_name> <profile_id> [numpage]")
-        return
+def main(search_term: str, start_page: int, end_page: int) -> None:
+    """
+    Main function to run the scraper.
     
-    shop_name = sys.argv[1]
-    profile_id = sys.argv[2]
-    
-    # Optional numpage argument
-    numpage = int(sys.argv[3]) if len(sys.argv) > 3 else 1
-    
-    url = f"{MAIN_URL}/shop/{shop_name}"
-    
-    # Create data directory if it doesn't exist
-    os.makedirs(DATA_DOWNLOAD, exist_ok=True)
-    os.makedirs(LOG_DIR, exist_ok=True)
-    
-    # Create CSV filename with timestamp
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    csv_filename = os.path.join(DATA_DOWNLOAD, f"{shop_name}_{timestamp}.csv")
-    
-    logger.info(f"Starting scraper for shop: {shop_name}")
-    logger.info(f"Data will be saved to: {csv_filename}")
-    
+    Args:
+        search_term: The search term to look for on Etsy
+        start_page: The starting page number
+        end_page: The ending page number
+    """
     driver = None
     try:
-        driver = open_gemlogin_driver(profile_id)
-        scraped_count = 0
+        driver = open_gemlogin_driver()
+        url = f"{MAIN_URL}/search?q={search_term}"
         
-        # Open CSV file and write header
-        with open(csv_filename, 'w', newline='', encoding='utf-8') as csvfile:
-            fieldnames = ['name', 'tags', 'img_url', 'product_url']
-            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        # Create output directory if it doesn't exist
+        output_dir = os.path.join(DATA_DOWNLOAD, search_term)
+        os.makedirs(output_dir, exist_ok=True)
+        
+        # Create CSV file with timestamp
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        csv_file = os.path.join(output_dir, f"{search_term}_{timestamp}.csv")
+        
+        with open(csv_file, 'w', newline='', encoding='utf-8') as f:
+            writer = csv.DictWriter(f, fieldnames=["name", "tags", "img_url", "product_url"])
             writer.writeheader()
             
-            # Scrape and write data
-            for result in card_scraping(driver=driver, url=url, numpage=numpage):
-                if result:
-                    writer.writerow(result)
-                    scraped_count += 1
-                    # Print progress every 10 items
-                    if scraped_count % 10 == 0:
-                        logger.info(f"Scraped {scraped_count} items so far...")
-        
-        logger.info(f"Scraping completed. Total items scraped: {scraped_count}")
-        logger.info(f"Data saved to: {csv_filename}")
-        
+            for product_data in card_scraping(driver, url, end_page - start_page + 1):
+                if product_data:
+                    writer.writerow(product_data)
+                    
     except Exception as e:
-        logger.error(f"Error in main execution: {str(e)}")
+        logger.error(f"Error in main: {str(e)}")
     finally:
         if driver:
-            try:
-                close_gemlogin_driver(profile_id)
-                logger.info("Driver closed successfully")
-            except Exception as e:
-                logger.error(f"Error closing driver: {str(e)}")
+            close_gemlogin_driver(driver)

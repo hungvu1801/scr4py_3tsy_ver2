@@ -7,6 +7,7 @@ services:
       - ./crawling_data:/app/crawling_data
       - ./logs:/app/logs
     environment:
-      - BASE_URL=${BASE_URL:-http://localhost:1010}
-    network_mode: "host" # This allows the container to access the host network
-    command: ["python", "src/main.py", "${SHOP_NAME}", "${PROFILE_ID}"]
+      BASE_URL: ${BASE_URL:-http://host.docker.internal:1010}
+      SHOP_NAME: ${SHOP_NAME}
+      PROFILE_ID: ${PROFILE_ID}
+      NUMPAGE: ${NUMPAGE:-1}
