@@ -1,35 +1,23 @@
-# Use Python 3.9 as base image
-FROM python:3.9-slim
+FROM mcr.microsoft.com/windows/servercore:ltsc2022
+
+SHELL ["powershell", "-Command"]
+
+# Install Python (silent install)
+RUN Invoke-WebRequest -Uri https://www.python.org/ftp/python/3.9.13/python-3.9.13-amd64.exe -OutFile python-installer.exe ; \
+    Start-Process -Wait -FilePath .\python-installer.exe -ArgumentList '/quiet InstallAllUsers=1 PrependPath=1' ; \
+    Remove-Item python-installer.exe
+
+# Confirm Python and pip installed
+RUN python --version ; pip --version
 
 # Set working directory
 WORKDIR /app
 
-# Install necessary system packages
-RUN apt-get update && apt-get install -y \
-    wget \
-    gnupg \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copy requirements file first for layer caching
-COPY requirements.txt .
+# Copy all project files into the container
+COPY . .
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the application code
-COPY . .
-
-# Create required directories
-RUN mkdir -p crawling_data logs user_profile_data
-
-# Set environment variables
-ENV PYTHONPATH=/app
-ENV PYTHONUNBUFFERED=1
-
-# Ensure entrypoint script exists and is executable
-COPY entrypoint.sh /app/entrypoint.sh
-RUN chmod +x /app/entrypoint.sh
-
-# Run script
-ENTRYPOINT ["/app/entrypoint.sh"]
+# Run your script (change this if needed)
+CMD ["python", "main.py"]

@@ -1,24 +1,13 @@
-# from src.main import main
-# import sys
+from src.main import main
+import sys
 
-# if __name__ == "__main__":
-#     if len(sys.argv) != 4:
-#         print("Usage: python main.py <search_term> <start_page> <end_page>")
-#         sys.exit(1)
+if __name__ == "__main__":
+    if len(sys.argv) != 4:
+        print("Usage: python main.py <search_term> <start_page> <end_page>")
+        sys.exit(1)
     
-#     search_term = sys.argv[1]
-#     start_page = int(sys.argv[2])
-#     end_page = int(sys.argv[3])
+    search_term = sys.argv[1]
+    start_page = int(sys.argv[2])
+    end_page = int(sys.argv[3])
     
-#     main(search_term=search_term, start_page=start_page, end_page=end_page)
-
-from src.open_driver import open_gemlogin_driver, close_gemlogin_driver
-
-driver = open_gemlogin_driver("1")
-if driver:
-    print("Driver opened successfully.")
-    driver.get("https://www.google.com")
-    driver.quit()
-    close_gemlogin_driver("1")
-else:
-    print("Failed to open driver.")
+    main(search_term=search_term, start_page=start_page, end_page=end_page)
