@@ -10,3 +10,6 @@ wheels/
 .venv
 crawling_data/*
 logs/*
+.env
+
+ThisNotSecretKeyAtAll/*

@@ -279,7 +279,7 @@ def random_crawling(driver: webdriver.Chrome, is_card: bool = False) -> None:
                 # Random scroll amount (between 100 and 300 pixels)
                 scroll_amount = random.randint(100, 300)
                 
-                # Sometimes scroll up a bit (20% chance)
+                # Sometimes scroll up a bit (5% chance)
                 if random.random() < 0.2 and current_position > viewport_height:
                     scroll_amount = -random.randint(50, 150)
                 
