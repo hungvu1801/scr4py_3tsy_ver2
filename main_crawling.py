@@ -6,7 +6,7 @@ load_dotenv()
 
 if __name__ == "__main__":
     if len(sys.argv) != 4:
-        print("Usage: python main.py <store> <start_page> <end_page>")
+        print("Usage: python main.py <store> <profile_id> <num_page>")
         sys.exit(1)
     
     store = sys.argv[1]
