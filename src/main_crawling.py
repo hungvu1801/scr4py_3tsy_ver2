@@ -1,17 +1,23 @@
-from src.open_driver import open_gemlogin_driver, close_gemlogin_driver
-from src.settings import MAIN_URL, WAIT_TIME, DATA_DOWNLOAD, LOG_DIR
-import sys
 import logging
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.common.exceptions import NoSuchElementException, TimeoutException, WebDriverException
-from typing import Generator, Dict, List, Optional
+import sys
 import random
 import time
 import csv
 from datetime import datetime
 import os
-import pathlib
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.common.exceptions import NoSuchElementException, TimeoutException, WebDriverException
+from typing import Generator, Dict, List, Optional
+
+from src.assets import update_cols_etsy
+from src.open_driver import open_gemlogin_driver, close_gemlogin_driver
+from src.GSheetWriteRead import GSheetWrite
+from src.settings import ETSY_URL, WAIT_TIME, DATA_DOWNLOAD, LOG_DIR
+
+# from src.utils.gg_utils import check_credentials
 
 # os.chdir(pathlib.Path(__file__).parent.resolve()) # change working directory to the parent of the current file
 
@@ -20,7 +26,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 logger.addHandler(logging.FileHandler(os.path.join(LOG_DIR, 'scraper.log')))
 
-def card_scraping(driver: webdriver.Chrome, url: str, numpage: int) -> Generator[Dict[str, str], None, None]:
+def card_scraping(driver: webdriver.Chrome, url: str, numpage: int, store: str) -> Generator[Dict[str, str], None, None]:
     """
     Scrape product cards from multiple pages.
     
@@ -79,11 +85,11 @@ def card_scraping(driver: webdriver.Chrome, url: str, numpage: int) -> Generator
                             break
                     
                     logger.info(f"Processing item {i}/{len(items)}: {item_url}")
-                    product_data = detail_scraping(driver=driver, url=item_url)
+                    product_datas = detail_scraping(driver=driver, url=item_url, store=store)
                     
-                    if product_data:
-                        for item_data in product_data:
-                            yield item_data
+                    if product_datas:
+                        for product_data in product_datas:
+                            yield product_data
                     
                 except NoSuchElementException:
                     logger.warning(f"Could not find link for item {i} on page {current_page}")
@@ -159,7 +165,7 @@ def get_next_page_url(driver: webdriver.Chrome) -> Optional[str]:
         logger.info("No pagination found")
         return None
 
-def detail_scraping(driver: webdriver.Chrome, url: str) -> Optional[List[Dict[str, str]]]:
+def detail_scraping(driver: webdriver.Chrome, url: str, store: str) -> Optional[List[Dict[str, str]]]:
     """
     Scrape detailed product information from a product page.
     
@@ -195,8 +201,9 @@ def detail_scraping(driver: webdriver.Chrome, url: str) -> Optional[List[Dict[st
         
         # Create data entries for each image
         product_data = []
-        for img_url in img_urls:
+        for img_url in img_urls[:1]:
             product_data.append({
+                "store": store,
                 "name": name,
                 "tags": tagnames,
                 "img_url": img_url,
@@ -307,35 +314,47 @@ def random_crawling(driver: webdriver.Chrome, is_card: bool = False) -> None:
     except Exception as e:
         logger.error(f"Error during random crawling: {str(e)}")
 
-def main(search_term: str, start_page: int, end_page: int) -> None:
+def main_crawling(store: str, profile_id: int, num_page: int) -> None:
     """
     Main function to run the scraper.
     
     Args:
-        search_term: The search term to look for on Etsy
-        start_page: The starting page number
-        end_page: The ending page number
+        store: The search term to look for on Etsy
+        profile_id: The starting page number
+        num: The ending page number
     """
     driver = None
+    spreadsheetId = os.getenv("SPREADSHEET_ID")
+    sheet_name = os.getenv("SHEET_NAME")
+
+    
+    gsheet_writer = GSheetWrite(
+        update_cols=update_cols_etsy,
+        spreadsheetId=spreadsheetId,
+        sheet_name=sheet_name,
+        queue_number=10)
+    
     try:
-        driver = open_gemlogin_driver()
-        url = f"{MAIN_URL}/search?q={search_term}"
+        driver = open_gemlogin_driver(profile_id=profile_id)
+        url = f"{ETSY_URL}/shop/{store}"
         
         # Create output directory if it doesn't exist
-        output_dir = os.path.join(DATA_DOWNLOAD, search_term)
+        output_dir = os.path.join(DATA_DOWNLOAD, store)
         os.makedirs(output_dir, exist_ok=True)
         
         # Create CSV file with timestamp
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        csv_file = os.path.join(output_dir, f"{search_term}_{timestamp}.csv")
+        csv_file = os.path.join(output_dir, f"{store}_{timestamp}.csv")
         
         with open(csv_file, 'w', newline='', encoding='utf-8') as f:
-            writer = csv.DictWriter(f, fieldnames=["name", "tags", "img_url", "product_url"])
+            writer = csv.DictWriter(f, fieldnames=["store", "name", "tags", "img_url", "product_url"])
             writer.writeheader()
             
-            for product_data in card_scraping(driver, url, end_page - start_page + 1):
+            for product_data in card_scraping(driver, url, num_page, store):
                 if product_data:
                     writer.writerow(product_data)
+                    gsheet_writer.add_to_queue(product_data)
+
                     
     except Exception as e:
         logger.error(f"Error in main: {str(e)}")

@@ -13,7 +13,7 @@ logger.setLevel(logging.INFO)
 
 
 def open_gemlogin_driver(profile_id: str) -> webdriver.Chrome:
-    BASE_URL = os.getenv("BASE_URL", "http://host.docker.internal:1010")
+    BASE_URL = os.getenv("BASE_URL", "http://localhost:1010")
     response = requests.get(f"{BASE_URL}/api/profiles/start/{profile_id}", timeout=10)
     response.raise_for_status()
 
@@ -47,6 +47,6 @@ def open_gemlogin_driver(profile_id: str) -> webdriver.Chrome:
     return driver
 
 def close_gemlogin_driver(profile_id) -> bool:
-    BASE_URL = os.getenv("BASE_URL", "http://host.docker.internal:1010")
+    BASE_URL = os.getenv("BASE_URL", "http://localhost:1010")
     response = requests.get(f"{BASE_URL}/api/profiles/close/{profile_id}", timeout=10)
     return response.status_code == 200

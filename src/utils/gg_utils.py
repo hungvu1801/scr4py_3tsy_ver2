@@ -1,17 +1,18 @@
-
+from datetime import datetime
 import logging
 import os
 
 import time
 import requests
 
-from typing import Tuple,Any
+from typing import Tuple, Any, List, Dict
 from urllib.error import ContentTooShortError
 
 # import urllib.request
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
+from googleapiclient.discovery import build
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -284,4 +285,46 @@ def append_data_to_sheet(
         ).execute()
         print("Append DONE.")
     except Exception as e:
-        print(f"An error occurred: {e}")
+        print(f"An error occurred: {e}", sheet_name)
+
+def write_to_gsheet(
+        data: Dict[str, List[str]], spreadsheetId: str, sheet_name: str, credentials: Credentials) -> None:
+    creds = check_credentials()
+    service = build('sheets', 'v4', credentials=creds)
+    sheet = service.spreadsheets()
+    sheet_name = "Source_News_BlockMedia"
+
+    lr_A_col, value = check_last_value_in_column(
+        spreadsheetId=spreadsheetId,
+        sheet=sheet, 
+        sheet_name=sheet_name, 
+        column_search="A", 
+        start_row=2)
+    
+    if lr_A_col == -1:
+        start_row = 2
+        value = 1
+    else:
+        start_row = lr_A_col + 1
+        value = int(value[0]) + 1
+  
+    update_id = [[i] for i in range(value, value + len(data["title"]))] # Update ID
+    update_titles = [[title] for title in data["title"]] # Update titles
+    update_contents = [[content] for content in data["content"]] # Update contents
+    update_urls = [[news_url] for news_url in data["news_url"]] # Update URLs
+    update_date = [[str(datetime.now())] for _ in range(value, value + len(data["title"]))] # Update date
+
+
+    update_lst = [update_id, update_titles, update_contents, update_urls, update_date]
+    update_cols = ['A', 'B', 'C', 'F', 'M']
+
+    for val, col in zip(update_lst, update_cols):
+        update_range = f'{sheet_name}!{col}{start_row}:{col}{start_row + len(data["title"]) - 1}'
+        update_body = {'values': val}
+
+        sheet.values().update(
+            spreadsheetId=spreadsheetId,
+            range=update_range,
+            valueInputOption='USER_ENTERED',
+            body=update_body
+        ).execute()

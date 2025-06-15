@@ -84,3 +84,17 @@ USER_AGENTS = [
     "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.77 Safari/537.36"
 ]
 
+update_cols_etsy = {
+    "A": "store", 
+    "B": "name", 
+    "C": "tags", 
+    "D": "img_url",
+    "E": "product_url"
+    }
+
+update_cols_ideogram = {
+    "A": "name", 
+    "B": "tags", 
+    "C": "img_url", 
+    "D": "product_url"
+    }
