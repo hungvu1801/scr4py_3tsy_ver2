@@ -13,3 +13,5 @@ logs/*
 .env
 
 ThisNotSecretKeyAtAll/*
+
+.ipynb_checkpoints/*

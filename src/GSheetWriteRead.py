@@ -6,8 +6,11 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
 from src.utils.gg_utils import check_credentials
+from src.logger import setup_logger
 import time
 from datetime import datetime
+
+logger = setup_logger(name="GSheetLogger", log_dir="logs")
 
 class GSheetWrite:
     def __init__(self,
@@ -70,10 +73,10 @@ class GSheetWrite:
             ).execute()
 
             last_row = self.get_last_row(copy_data)
-            print(f"Next Last row: {last_row}")
+            logger.info(f"Next Last row: {last_row}")
             self.queue.clear()
         except Exception as err:
-            print(f"An error occurred: {err}")
+            logger.error(f'GSheetWrite: An error occurred: {err}')
 
     def write_to_gsheet_value(self, range_name: str, data: str | list):
         try:
@@ -97,9 +100,9 @@ class GSheetWrite:
             )
             print(f"{result.get('updatedCells')} cells updated.")
             return result
-        except HttpError as error:
-            print(f"An error occurred: {error}")
-            return error
+        except HttpError as err:
+            logger.error(f'GSheetWrite: An error occurred: {err}')
+            return
 
     def check_last_value_in_column(self) -> int:
         """
@@ -130,7 +133,7 @@ class GSheetWrite:
             return last_row_index + 1
 
         except Exception as err:
-            print(f'An error occurred: {err}')
+            logger.error(f'GSheetWrite: An error occurred: {err}')
             return 2
 
     def get_last_row(self, queue) -> None:
@@ -148,7 +151,7 @@ class GSheetRead:
         spreadsheetId: str, 
         sheet_name: str, 
         last_row: int,
-        read_column: int=2, 
+        read_column: str, 
         batch: int=10):
         
         self.spreadsheetId = spreadsheetId
@@ -160,19 +163,17 @@ class GSheetRead:
         self.last_row = last_row
         self.batch = batch
 
-    def read_from_gsheet(self, range_name: str) -> None:
+    def read_from_gsheet(self) -> Dict[str, Any]:
         range_name = f"{self.sheet_name}!{self.read_column}2:{self.read_column}{self.last_row}"
         try:
-            result = (
+            return (
                 self.service.spreadsheets()
                 .values()
                 .get(spreadsheetId=self.spreadsheetId, range=range_name)
                 .execute()
             )
-            rows = result.get("values", [])
-            print(f"{len(rows)} rows retrieved")
-            return result
+
         except HttpError as error:
-            print(f"An error occurred: {error}")
+            logger.error(f"An error occurred: {error}")
             return error
         

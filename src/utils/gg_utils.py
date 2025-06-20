@@ -14,38 +14,31 @@ from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-# Spreadsheet ID
+from src.logger import setup_logger
+from src.settings import LOG_DIR, SCOPES
 
-# If modifying these scopes, delete the file token.json.
-SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
+logger = setup_logger(name="IdeogramLogger", log_dir=f"{LOG_DIR}/ideogram_logs")
 
-def download_media(url:str, directory:str, name:str, ext:str="img") -> int:
+def download_media(
+        url:str, 
+        directory:str, 
+        name:str, 
+        media_type:str="img") -> int:
     """
     Parameters:
         name: already has extension included, e.g. "img, .png"
     """
-    ####### for solving Error "SSL: CERTIFICATE_VERIFY_FAILED" #######
-    # ssl._create_default_https_context = ssl._create_unverified_context
-    ##################################################################
-    # opener = urllib.request.build_opener()
-    # opener.addheaders=[('User-Agent','Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36')]
-    # urllib.request.install_opener(opener) # Add user-agent for each request
     num_of_tried = 0 # Count number of time the request is sent for each image
 
     while num_of_tried < 2:
         time.sleep(1)
         try:
-            # headers = {
-            #     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/'
-            # }
             os.makedirs(directory, exist_ok=True)
             path = os.path.join(directory, name)
             if type(url) == str:
                 # url = quote(url, safe = ':/')
                 logger.info(f"Downloading: url : {url}, directory : {directory}, name : {name}")
-                if "&export=download" in url or ext == "mp4":
+                if "&export=download" in url or media_type == "mp4":
                     response = requests.get(url, stream=True)
                     # Save the file
                     if response.status_code == 200:
@@ -56,40 +49,41 @@ def download_media(url:str, directory:str, name:str, ext:str="img") -> int:
                         return 0
                     else:
                         logger.info(f"Failed to download image: {url} -- Status code: {response.status_code}")
-                        print("Failed to download image:", url, "Status code:", response.status_code)
                         return -1
                 else:
                     response = requests.get(url, timeout=10)
                     if response.status_code == 200:
-
                         with open(path, 'wb') as f:
                             f.write(response.content)
                         return 0
                     else:
                         logger.info(f"Failed to download image: {url} -- Status code: {response.status_code}")
-                        print("Failed to download image:", url, "Status code:", response.status_code)
                         return -1
 
             else:
                 print("url is invalid:", url)
                 return -1
         except ContentTooShortError: # exception when image is broken, try send request again
-            logger.info(f"{ContentTooShortError} -- Retry Download img = {name}; path = {directory}")
+            logger.error(f"{ContentTooShortError} -- Retry Download img = {name}; path = {directory}")
             num_of_tried += 1
         except ValueError: # exception when url is not downloadable
-            logger.info(f"url is not valid : {url}")
+            logger.error(f"url is not valid : {url}")
             print("url is invalid:", url)
             return -1
     if num_of_tried >= 2:
         raise ContentTooShortError
 
 
-
-        return False
-
-def check_last_value_in_column(spreadsheetId, sheet, sheet_name:str, column_search:str, start_row:int=1) -> Tuple[int, Any]:
+def check_last_value_in_column(
+        spreadsheetId, 
+        sheet_name:str, 
+        column_search:str, 
+        start_row:int=1) -> Tuple[int, Any]:
     try:
-
+   
+        credentials = check_credentials()
+        service = build('sheets', 'v4', credentials=credentials)
+        sheet = service.spreadsheets()
         _range = f'{sheet_name}!{column_search}{start_row}:{column_search}'  # ie. H2:H
 
         _result = sheet.values().get(spreadsheetId=spreadsheetId, range=_range).execute()
@@ -102,27 +96,26 @@ def check_last_value_in_column(spreadsheetId, sheet, sheet_name:str, column_sear
                 last_row_index = i # Because we start from row i in the sheet
                 break
         if last_row_index == -1:
-            print(f"No non-empty values found in column {column_search}.")
+            logger.info(f"No non-empty values found in column {column_search}.")
             return (-1, None)
         last_row_index += start_row
         
         return (last_row_index, _values[i])
     except Exception as err:
-        print(f'An error occurred: {err}')
+        logger.error(f'An error occurred: {err}')
         return (-1, None)
 
 def check_last_value_in_row(spreadsheetId, sheet, sheet_name:str, row_search:int, start_column:str="A") -> Tuple[str, Any]:
     try:
 
         _range = f'{sheet_name}!{start_column}{row_search}:ZZ{row_search}'  # ie. A2:ZZ2
-        print(_range)
 
         _result = sheet.values().get(spreadsheetId=spreadsheetId, range=_range).execute()
 
         _values = _result.get('values', [])
 
         row_values = _values[0]  # The first and only row in the result
-        print(row_values)
+
         last_col_index = -1
         
         for i in reversed(range(len(row_values))):
@@ -131,13 +124,13 @@ def check_last_value_in_row(spreadsheetId, sheet, sheet_name:str, row_search:int
                 break
         col_letter = get_column_letter(last_col_index + get_column_index(start_column))
         if last_col_index == -1:
-            print(f"No non-empty values found in column {row_search}.")
+            logger.info(f"No non-empty values found in column {row_search}.")
             return ("", None)
         
         return (col_letter, row_values[i])
     
     except Exception as err:
-        print(f'An error occurred: {err}')
+        logger.error(f'An error occurred: {err}')
         return (-1, None)
 
 def check_for_checked_rows(spreadsheetId, sheet, sheet_name:str, column_search:str, start_row:int=2) -> list:
@@ -155,7 +148,7 @@ def check_for_checked_rows(spreadsheetId, sheet, sheet_name:str, column_search:s
                 checked_rows.append(i + start_row) # Because we start from row i in the sheet
         return checked_rows
     except Exception as err:
-        print(f'An error occurred: {err}')
+        logger.error(f'An error occurred: {err}')
         return -1
     
 def check_credentials():
@@ -184,7 +177,7 @@ def check_credentials():
                 token.write(creds.to_json())
         return creds
     except Exception as e:
-        print(f"[!] Error checking credentials: {e}")
+        logger.error(f"[!] Error checking credentials: {e}")
         return None
 
 def get_column_letter(index: int) -> str:
@@ -257,9 +250,9 @@ def create_new_sheets_with_template(
             body=update_body
         ).execute()
 
-        print(f"Row {row_number} copied from {source_sheet_name} to {target_sheet_name}.")
+        logger.info(f"Row {row_number} copied from {source_sheet_name} to {target_sheet_name}.")
     except Exception as e:
-        print(f"An error occurred: {e}")
+        logger.error(f"An error occurred: {e}")
 
 def append_data_to_sheet(
     spreadsheetId, 
@@ -288,7 +281,9 @@ def append_data_to_sheet(
         print(f"An error occurred: {e}", sheet_name)
 
 def write_to_gsheet(
-        data: Dict[str, List[str]], spreadsheetId: str, sheet_name: str, credentials: Credentials) -> None:
+        data: Dict[str, List[str]], 
+        spreadsheetId: str, 
+        sheet_name: str) -> None:
     creds = check_credentials()
     service = build('sheets', 'v4', credentials=creds)
     sheet = service.spreadsheets()

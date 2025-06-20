@@ -1,11 +1,11 @@
 import logging
-
+import os
 import requests
-from selenium import webdriver
 
+
+from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
-import os
 
 
 logger = logging.getLogger(__name__)

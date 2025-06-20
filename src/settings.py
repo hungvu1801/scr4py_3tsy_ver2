@@ -5,4 +5,9 @@ ETSY_URL = "https://www.etsy.com"
 IDEOGRAM_URL = "https://ideogram.ai/t/explore"
 
 DATA_DOWNLOAD = 'crawling_data'
+
 LOG_DIR = 'logs'
+
+IMAGE_DOWNLOAD = 'images'
+
+SCOPES = ['https://www.googleapis.com/auth/spreadsheets']

@@ -5,6 +5,7 @@ import time
 import csv
 from datetime import datetime
 import os
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from selenium import webdriver
@@ -13,18 +14,16 @@ from selenium.common.exceptions import NoSuchElementException, TimeoutException,
 from typing import Generator, Dict, List, Optional
 
 from src.assets import update_cols_etsy
+from src.logger import setup_logger
 from src.open_driver import open_gemlogin_driver, close_gemlogin_driver
 from src.GSheetWriteRead import GSheetWrite
 from src.settings import ETSY_URL, WAIT_TIME, DATA_DOWNLOAD, LOG_DIR
 
 # from src.utils.gg_utils import check_credentials
 
-# os.chdir(pathlib.Path(__file__).parent.resolve()) # change working directory to the parent of the current file
+os.makedirs(f"{LOG_DIR}/etsy_scraper", exist_ok=True)
+logger = setup_logger(name="EtsyScraper", log_dir=f"{LOG_DIR}/etsy_scraper")
 
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-logger.addHandler(logging.FileHandler(os.path.join(LOG_DIR, 'scraper.log')))
 
 def card_scraping(driver: webdriver.Chrome, url: str, numpage: int, store: str) -> Generator[Dict[str, str], None, None]:
     """
