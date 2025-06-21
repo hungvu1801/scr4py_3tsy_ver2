@@ -323,3 +323,16 @@ def write_to_gsheet(
             valueInputOption='USER_ENTERED',
             body=update_body
         ).execute()
+
+def get_value_from_row(gsheet_read, range_name, spreadsheetId):
+    try:
+        result_ = gsheet_read.read_from_gsheet(
+            range_name=range_name, 
+            spreadsheetId=spreadsheetId)
+        if not result_ or "values" not in result_ or not result_["values"]:
+            logger.error(f"No values found in the range {range_name}.")
+            return None
+        return result_["values"][0][0]
+    except Exception as e:
+        logger.error(f"Error in function get_value_from_row : {e}")
+        return None

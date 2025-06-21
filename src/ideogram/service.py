@@ -13,10 +13,12 @@ from selenium.webdriver.common.action_chains import ActionChains
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 
 from src.assets import update_cols_ideogram, update_cols_etsy
 from src.utils.gg_utils import download_media
+from src.utils.utils import download_directly_with_selenium
 
 from src.logger import setup_logger
 from src.settings import IDEOGRAM_URL, LOG_DIR, IMAGE_DOWNLOAD
@@ -30,7 +32,7 @@ os.makedirs(f"{LOG_DIR}/ideogram_logs", exist_ok=True)
 logger = setup_logger(name="IdeogramLoggerService", log_dir=f"{LOG_DIR}/ideogram_logs")
 
 
-def check_default_settings(driver:webdriver.Chrome):
+def check_default_settings(driver: webdriver.Chrome):
     logger.info("Checking default settings for Ideogram.")
     check_ratio(driver)
     check_num_of_imgs(driver)
@@ -116,42 +118,55 @@ def get_image_urls(driver:webdriver.Chrome):
             yield None
 
 
-def generate_image(driver:webdriver.Chrome, prompt:str, sku_name:str) -> None:
+def generate_image(
+        driver_gen: webdriver.Chrome, 
+        driver_down: webdriver.Chrome, 
+        prompt: str, 
+        sku_name: str) -> int:
     logger.info(f"Generating image with SKU name: {sku_name}")
     if not prompt:
-        return
+        return 0
     ## Send prompt to the text area and click the generate button
-    text_area = driver.find_element(
+    text_area = driver_gen.find_element(
         By.XPATH, "//textarea[@placeholder='Describe what you want to see']"
         )
+    text_area.send_keys(Keys.CONTROL, 'a')
+    text_area.send_keys(Keys.DELETE)
+    time.sleep(1)
     text_area.send_keys(prompt)
-    generate_button = driver.find_element(
+    generate_button = driver_gen.find_element(
         By.XPATH, 
         "(//div[@class='MuiBox-root css-hn2z7n']//button[contains(@class, 'MuiButtonBase-root')])[2]")
     generate_button.click()
     
     ## Wait for the image generation to complete
-    if not wait_for_generation(driver):
+    if not wait_for_generation(driver_gen):
         logger.error("Image generation failed or timed out.")
-        return None
+        return 0
     try:
-        url_img_generator = get_image_urls(driver)
-
+        url_img_generator = get_image_urls(driver_gen)
         # Get the first image URL
-        url_img = next(url_img_generator)
-        logger.info(url_img)
-        download_media(
-            url=url_img,
-            media_type="img",
-            name=sku_name,
-            directory=IMAGE_DOWNLOAD,)
+        suffix = 65
+        while True:
+            time.sleep(1)
+            try:
+                url_img = next(url_img_generator)
+                logger.info(url_img)
+                save_path = os.path.join(IMAGE_DOWNLOAD, f"{sku_name}_{chr(suffix)}.png")
 
-    except StopIteration:
-        logger.info("Img generator is depleted.")
-        return None
+                download_directly_with_selenium(
+                    driver=driver_down, 
+                    url=url_img, 
+                    save_path=save_path)
+            
+                suffix += 1
+            except StopIteration:
+                logger.info("Img generator is depleted.")
+                break
+        return 1
     except Exception as e:
-        logger.error(f"Error while generating image: {str(e)}")
-        return None
+        logger.error(f"Error in generate_image: {str(e)}")
+        return 0
     
 
 def check_ratio(driver:webdriver.Chrome) -> None:
@@ -159,9 +174,15 @@ def check_ratio(driver:webdriver.Chrome) -> None:
     ratio_checking = os.environ.get("RESOLUTION_SETTINGS")
     width = os.environ.get("WIDTH")
     heigth = os.environ.get("HEIGHT")
-
-    ratio_checked = driver.find_element(
-        By.XPATH, "//div[@class='MuiBox-root css-1dktxqu']/div[3]").text
+    try:
+        ratio_elem = WebDriverWait(driver, 30).until(
+                EC.presence_of_element_located(
+                    (By.XPATH, 
+                    "//div[@class='MuiBox-root css-1dktxqu']/div[3]"))
+                    )
+    except TimeoutException:
+        return None
+    ratio_checked = ratio_elem.text
     if ratio_checking != ratio_checked:
         # Click ratio button
         settings_ratio(driver, heigth, width)

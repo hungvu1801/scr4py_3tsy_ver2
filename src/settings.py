@@ -10,4 +10,9 @@ LOG_DIR = 'logs'
 
 IMAGE_DOWNLOAD = 'images'
 
+IMAGE_DOWNLOAD_SAMPLE = "images_sample"
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
+
+DEFINED_HEADER_IN_ONGOING = {
+    "A": ""
+}

@@ -39,16 +39,19 @@ def test_write_gsheet():
 
 def test_read_gsheet():
     spreadsheetId = os.getenv("SPREADSHEET_ID")
-    sheet_name = os.getenv("SHEET_NAME")
-    
+    sheet_name = os.getenv("SHEET_NAME_IMG")
+    service = build('sheets', 'v4', credentials=gg_utils.check_credentials())
+
     if not spreadsheetId or not sheet_name:
         raise ValueError("Environment variables SPREADSHEET_ID and SHEET_NAME must be set")
     gsheet_read = GSheetRead(
-        spreadsheetId=spreadsheetId,
-        sheet_name="Ongoing",
-        last_row=77,
-        read_column="I")
-    print(gsheet_read.read_from_gsheet())
+        service=service,)
+    row_generator = gsheet_read.filter_data_by_column_get_row(
+        filter_column="H", filter_value="Pending", spreadsheetId=spreadsheetId, sheet_name=sheet_name)
+    while True:
+        print(next(row_generator))
+
+
 
 def test_check_last_row():
     spreadsheetId = os.getenv("SPREADSHEET_ID")

@@ -15,3 +15,7 @@ logs/*
 ThisNotSecretKeyAtAll/*
 
 .ipynb_checkpoints/*
+
+images/*
+
+images_sample/*

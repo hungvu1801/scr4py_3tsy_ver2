@@ -1,17 +1,22 @@
 from dotenv import load_dotenv
 import os
 import sys
+from googleapiclient.discovery import build
 from src.assets import update_cols_ideogram, update_cols_etsy
 
 from src.GSheetWriteRead import GSheetWrite, GSheetRead
+
 from src.ideogram.service import (
+    
     browse_site, 
     check_default_settings, 
     generate_image, 
-    get_data_to_scrape)
+    get_data_to_scrape,
+    )
+
 from src.open_driver import open_gemlogin_driver, close_gemlogin_driver
 from src.logger import setup_logger
-from src.settings import LOG_DIR
+from src.settings import LOG_DIR, IMAGE_DOWNLOAD_SAMPLE
 from src.utils import gg_utils
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -23,69 +28,95 @@ logger = setup_logger(name="IdeogramLogger", log_dir=f"{LOG_DIR}/ideogram_logs")
 
 def controller() -> None:
 
-    driver = None
+    driver_1 = driver_2 = None
+
     spreadsheetId = os.getenv("SPREADSHEET_ID")
     sheet_name = os.getenv("SHEET_NAME_IMG")
-
-    last_row, _ = gg_utils.check_last_value_in_column(
-        spreadsheetId=spreadsheetId, sheet_name=sheet_name, column_search="I", start_row=1)
-    logger.info(f"Last row in column I: {last_row}")
+    spreadsheetId = os.getenv("SPREADSHEET_ID")
+    sheet_name = os.getenv("SHEET_NAME_IMG")
+    profile_1 = int(os.getenv("PROFILE_ID_1", "2"))
+    profile_2 = int(os.getenv("PROFILE_ID_2", "3"))
     
-    # gsheet_writer = GSheetWrite(
-    #     update_cols=update_cols_etsy,
-    #     spreadsheetId=spreadsheetId,
-    #     sheet_name=sheet_name,
-    #     queue_number=10)
-    gsheet_reader_I_col = GSheetRead(
-        spreadsheetId=spreadsheetId,
-        sheet_name=sheet_name,
-        last_row=last_row,
-        read_column="I")
-    
-    gsheet_reader_A_col = GSheetRead(
-        spreadsheetId=spreadsheetId,
-        sheet_name=sheet_name,
-        last_row=last_row,
-        read_column="A")
+    credentials = gg_utils.check_credentials()
+    service = build('sheets', 'v4', credentials=credentials)
 
-    # timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    # last_row, _ = gg_utils.check_last_value_in_column(
+    #     spreadsheetId=spreadsheetId, sheet_name=sheet_name, column_search="I", start_row=1)
+    # logger.info(f"Last row in column I: {last_row}")
+    
+    gsheet_writer = GSheetWrite(
+        service=service,)
+    
+    gsheet_read = GSheetRead(
+        service=service,)
+    
+    row_generator = gsheet_read.filter_data_by_column_get_row(
+        filter_column="H", 
+        filter_value="Pending", 
+        spreadsheetId=spreadsheetId, 
+        sheet_name=sheet_name)
+
     try:
-        driver = open_gemlogin_driver(profile_id=2)
+        driver_1 = open_gemlogin_driver(profile_id=profile_1)
+        driver_2 = open_gemlogin_driver(profile_id=profile_2)
         # Create CSV file with timestamp
-        browse_site(driver)
-        check_default_settings(driver)
-        data_I_col = gsheet_reader_I_col.read_from_gsheet()
-        data_A_col = gsheet_reader_A_col.read_from_gsheet()
-        prompt_generator = get_data_to_scrape(data_I_col)
-        sku_generator = get_data_to_scrape(data_A_col)
+        browse_site(driver_1)
+        check_default_settings(driver_1)
+
         while True:
             try:
-                idx_I, val_I = next(prompt_generator)
-                if val_I:
-                    prompt = val_I[0] # Get prompt from column I
-                    logger.info(prompt)
-                else:
-                    logger.info(f"Skipping empty prompt at row {idx_I}")
+                row_num = next(row_generator)
+                prompt = gg_utils.get_value_from_row(
+                    gsheet_read=gsheet_read,
+                    range_name=f"{sheet_name}!I{row_num}", 
+                    spreadsheetId=spreadsheetId,)
+                logger.info(f"prompt at row {row_num}: {prompt}")
+
+                if not prompt:
+                    logger.info(f"Skipping empty prompt at row {row_num}")
+                    continue
+                sku_name = gg_utils.get_value_from_row(
+                    gsheet_read=gsheet_read,
+                    range_name=f"{sheet_name}!A{row_num}", spreadsheetId=spreadsheetId,)
+                
+                if not sku_name:
+                    logger.info(f"Skipping empty prompt at row {row_num}")
                     continue
 
-                _, val_A = next(sku_generator)
-                if val_A:
-                    sku_name = val_A[0] # Get SKU name from column A
-                    logger.info(sku_name)
-                else:
-                    logger.info(f"Skipping empty SKU name at row {idx_I}")
-                    continue
-                generate_image(driver, prompt, sku_name)
+                img_url_sample = gg_utils.get_value_from_row(
+                    gsheet_read=gsheet_read,
+                    range_name=f"{sheet_name}!E{row_num}", spreadsheetId=spreadsheetId,)
+
+                if img_url_sample:
+                    logger.info(img_url_sample)
+                    gg_utils.download_media(
+                        url=img_url_sample,
+                        media_type="img",
+                        name=f"{sku_name}.png",
+                        directory=IMAGE_DOWNLOAD_SAMPLE,)
+
+                if generate_image(
+                    driver_gen=driver_1, 
+                    driver_down=driver_2, 
+                    prompt=prompt, 
+                    sku_name=sku_name):
+
+                    gsheet_writer.write_to_gsheet_value(
+                        range_name=f"{sheet_name}!H{row_num}",
+                        spreadsheetId=spreadsheetId,
+                        data="Done"
+                    )
 
             except StopIteration as e:
                 logger.info(f"No more data to scrape : {str(e)}")
                 break
             except Exception as e:
-                logger.error(f"Error while getting data to scrape: {str(e)}")
+                logger.error(f"Error in controller: Error while getting data to scrape: {str(e)}")
                 break
 
     except Exception as e:
         logger.error(f"Error in controller: {str(e)}")
-    finally:
-        if driver:
-            close_gemlogin_driver(driver)
+    # finally:
+    #     close_gemlogin_driver(profile_id=profile_1)
+    #     close_gemlogin_driver(profile_id=profile_2)
+
