@@ -82,7 +82,7 @@ def wait_for_generation(driver:webdriver.Chrome) -> bool:
         p_elem = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located(
                 (By.XPATH, 
-                "//p[@class='MuiTypography-root MuiTypography-body1 css-1bhxqar']")))
+                "//p[@class='MuiTypography-root MuiTypography-body1 css-1ce06iw']")))
         
         while p_elem.text != "Generation complete":
             time.sleep(5)
@@ -91,7 +91,7 @@ def wait_for_generation(driver:webdriver.Chrome) -> bool:
             p_elem = WebDriverWait(driver, 10).until(
                 EC.presence_of_element_located(
                     (By.XPATH, 
-                    "//p[@class='MuiTypography-root MuiTypography-body1 css-1bhxqar']")))
+                    "//p[@class='MuiTypography-root MuiTypography-body1 css-1ce06iw']")))
         return True
     except TimeoutException:
         logger.error("Timeout while waiting for the image generation to complete.")
@@ -102,7 +102,7 @@ def get_image_urls(driver:webdriver.Chrome):
     try:
         img_elems = WebDriverWait(driver, 30).until(
                 EC.presence_of_all_elements_located(
-                    (By.XPATH, "//div[@class='MuiGrid-root MuiGrid-item MuiGrid-grid-xs-6 css-1s50f5r']")))
+                    (By.XPATH, "//div[contains(@class, 'MuiGrid-root MuiGrid-container MuiGrid-spacing-xs-1')]/div")))
 
     except TimeoutException as e:
         logger.error(f"Timeout while waiting for image elements: {str(e)}")
@@ -127,17 +127,33 @@ def generate_image(
     if not prompt:
         return 0
     ## Send prompt to the text area and click the generate button
-    text_area = driver_gen.find_element(
-        By.XPATH, "//textarea[@placeholder='Describe what you want to see']"
-        )
-    text_area.send_keys(Keys.CONTROL, 'a')
-    text_area.send_keys(Keys.DELETE)
-    time.sleep(1)
-    text_area.send_keys(prompt)
-    generate_button = driver_gen.find_element(
-        By.XPATH, 
-        "(//div[@class='MuiBox-root css-hn2z7n']//button[contains(@class, 'MuiButtonBase-root')])[2]")
-    generate_button.click()
+    while True:
+        try:
+            text_area = driver_gen.find_element(
+                By.XPATH, "//textarea[@placeholder='Describe what you want to see']"
+                )
+            text_area.send_keys(Keys.CONTROL, 'a')
+            text_area.send_keys(Keys.DELETE)
+            time.sleep(1)
+            text_area.send_keys(prompt)
+            time.sleep(1)
+            break
+        except Exception as e:
+            logger.error(f"Error in locating Describe what you want to see: {str(e)}")
+            time.sleep(1)
+            continue
+        
+    while True:
+        try:
+            generate_button = driver_gen.find_element(
+                By.XPATH, 
+                "//button/span[contains(text(), 'Generate')]")
+            generate_button.click()
+            time.sleep(1)
+            break
+        except Exception as e:
+            logger.error(f"Error in locating Generation button: {str(e)}")
+            continue
     
     ## Wait for the image generation to complete
     if not wait_for_generation(driver_gen):
@@ -244,7 +260,7 @@ def settings_num_of_imgs(driver:webdriver.Chrome, image_num:str="1") -> None:
         time.sleep(1)
         # Click on number of images button
         driver.find_element(
-            By.XPATH, f"//div[@class='MuiToggleButtonGroup-root css-1s9svmu']/button[{image_num}]").click()
+            By.XPATH, f"//div[@class='MuiToggleButtonGroup-root css-1mfgcko']/button[{image_num}]").click()
         time.sleep(1)
         driver.find_element(
             By.XPATH, "//div[@class='MuiBox-root css-1dktxqu']/div[5]").click()
