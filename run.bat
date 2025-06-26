@@ -1,0 +1,1 @@
+f:/auto_etsy/.venv/Scripts/python.exe f:/auto_etsy/main_ideogram.py
