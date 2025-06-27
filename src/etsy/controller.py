@@ -6,7 +6,6 @@ import os
 import sys
 
 
-
 from src.etsy.service import initiate_drivers
 from src.GSheetWriteRead import GSheetWrite, GSheetRead
 from src.open_driver import open_gemlogin_driver, close_gemlogin_driver
@@ -22,7 +21,7 @@ logger = setup_logger(name="IdeogramLogger", log_dir=f"{LOG_DIR}/etsy_logs")
 
 
 
-def controller_thread(driver, url, global_lock) -> None:
+def controller_thread(driver_pool, url, global_lock) -> None:
     """
     Main function to run the scraper.
     
@@ -31,6 +30,7 @@ def controller_thread(driver, url, global_lock) -> None:
         profile_id: The starting page number
         num: The ending page number
     """
+    driver = driver_pool.pop()
     sheet_name_get_link = os.getenv("SHEET_NAME")
     sheet_name_put_data = os.getenv("SHEET_NAME")
     credentials = gg_utils.check_credentials()
@@ -40,8 +40,6 @@ def controller_thread(driver, url, global_lock) -> None:
         service=service,)
     
     try:
-
-        
         # Create CSV file with timestamp
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
@@ -49,15 +47,15 @@ def controller_thread(driver, url, global_lock) -> None:
         logger.error(f"Error in main: {str(e)}")
     finally:
         if driver:
-            ...
+            driver_pool.append(driver)
 
 def controller_main():
     spreadsheetId = os.getenv("SPREADSHEET_ID")
-    sheet_name = os.getenv("SHEET_NAME_IMG")
-    sheet_name = os.getenv("SHEET_NAME_IMG")
+    sheet_name_read = os.getenv("SHEET_FETCH_URL")
+    sheet_name_write = os.getenv("SHEET_NAME_IMG")
     
-    active_drivers = initiate_drivers()
-    if not active_drivers:
+    drivers_pool = initiate_drivers()
+    if not drivers_pool:
         logger.error("Error controller main : making drivers ")
         return
     
@@ -70,7 +68,10 @@ def controller_main():
         service=service,)
     
     row_generator = gsheet_read.filter_data_by_column_get_row(
-        filter_column="H", 
+        filter_column="B", 
         filter_value="Pending",
         spreadsheetId=spreadsheetId, 
-        sheet_name=sheet_name)
+        sheet_name=sheet_name_read)
+    
+    with ThreadPoolExecutor(max_workers=3) as executor:
+        futures = [executor.submit()]
