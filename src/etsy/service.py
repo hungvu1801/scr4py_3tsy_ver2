@@ -313,50 +313,14 @@ def random_crawling(driver: webdriver.Chrome, is_card: bool = False) -> None:
     except Exception as e:
         logger.error(f"Error during random crawling: {str(e)}")
 
-def main_crawling(store: str, profile_id: int, num_page: int) -> None:
-    """
-    Main function to run the scraper.
-    
-    Args:
-        store: The search term to look for on Etsy
-        profile_id: The starting page number
-        num: The ending page number
-    """
-    driver = None
-    spreadsheetId = os.getenv("SPREADSHEET_ID")
-    sheet_name = os.getenv("SHEET_NAME")
-
-    
-    gsheet_writer = GSheetWrite(
-        update_cols=update_cols_etsy,
-        spreadsheetId=spreadsheetId,
-        sheet_name=sheet_name,
-        queue_number=10)
-    
-    try:
-        driver = open_gemlogin_driver(profile_id=profile_id)
-        url = f"{ETSY_URL}/shop/{store}"
-        
-        # Create output directory if it doesn't exist
-        output_dir = os.path.join(DATA_DOWNLOAD, store)
-        os.makedirs(output_dir, exist_ok=True)
-        
-        # Create CSV file with timestamp
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        csv_file = os.path.join(output_dir, f"{store}_{timestamp}.csv")
-        
-        with open(csv_file, 'w', newline='', encoding='utf-8') as f:
-            writer = csv.DictWriter(f, fieldnames=["store", "name", "tags", "img_url", "product_url"])
-            writer.writeheader()
-            
-            for product_data in card_scraping(driver, url, num_page, store):
-                if product_data:
-                    writer.writerow(product_data)
-                    gsheet_writer.add_to_queue(product_data)
-
-                    
-    except Exception as e:
-        logger.error(f"Error in main: {str(e)}")
-    finally:
+def initiate_drivers() -> list:
+    num_driver = int(os.getenv("NUMDRIVER", "1"))
+    active_drivers = list()
+    for i in range(1, 4):
+        profile = int(os.getenv(f"PROFILE_ID_CRAWL_{i}", str(i)))
+        driver = open_gemlogin_driver(profile_id=profile)
         if driver:
-            close_gemlogin_driver(driver)
+            active_drivers.append(driver)
+    if len(active_drivers) < num_driver or len(active_drivers) == 0:
+        return None
+    return active_drivers

@@ -11,6 +11,9 @@ LOG_DIR = 'logs'
 IMAGE_DOWNLOAD = 'images'
 
 IMAGE_DOWNLOAD_SAMPLE = "images_sample"
+
+IMAGE_DOWNLOAD_ETSY = "images_etsy"
+
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 
 DEFINED_HEADER_IN_ONGOING = {

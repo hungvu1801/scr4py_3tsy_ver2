@@ -1,16 +1,14 @@
 import sys
-from src.main_crawling import main_crawling
+import os
 from dotenv import load_dotenv
+
+from src.etsy.controller import controller
+from src.settings import IMAGE_DOWNLOAD_ETSY
+
 load_dotenv()
 
+os.makedirs(IMAGE_DOWNLOAD_ETSY, exist_ok=True)
 
 if __name__ == "__main__":
-    if len(sys.argv) != 4:
-        print("Usage: python main.py <store> <profile_id> <num_page>")
-        sys.exit(1)
     
-    store = sys.argv[1]
-    profile_id = int(sys.argv[2])
-    num_page = int(sys.argv[3])
-    
-    main_crawling(store=store, profile_id=profile_id, num_page=num_page)
+    controller()
