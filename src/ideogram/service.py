@@ -10,7 +10,7 @@ import time
 
 from selenium import webdriver
 from selenium.webdriver.common.action_chains import ActionChains
-from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import TimeoutException, StaleElementReferenceException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
@@ -78,24 +78,36 @@ def get_data_to_scrape(data):
 def wait_for_generation(driver:webdriver.Chrome) -> bool:
     logger.info("Waiting for image generation to complete.")
     wait_time_count = 0
-    try:
-        p_elem = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located(
-                (By.XPATH, 
-                "//p[@class='MuiTypography-root MuiTypography-body1 css-1ce06iw']")))
-        
-        while p_elem.text != "Generation complete":
-            time.sleep(5)
-            wait_time_count += 5
-            logger.info(f"Waiting for image generation : {wait_time_count} seconds")
+    attempt = 0
+    while True:
+        try:
             p_elem = WebDriverWait(driver, 10).until(
                 EC.presence_of_element_located(
                     (By.XPATH, 
                     "//p[@class='MuiTypography-root MuiTypography-body1 css-1ce06iw']")))
-        return True
-    except TimeoutException:
-        logger.error("Timeout while waiting for the image generation to complete.")
-        return False
+            
+            while p_elem.text != "Generation complete":
+                time.sleep(5)
+                wait_time_count += 5
+                logger.info(f"Waiting for image generation : {wait_time_count} seconds")
+                p_elem = WebDriverWait(driver, 10).until(
+                    EC.presence_of_element_located(
+                        (By.XPATH, 
+                        "//p[@class='MuiTypography-root MuiTypography-body1 css-1ce06iw']")))
+            return True
+        except TimeoutException as e:
+            logger.error(f"Timeout while waiting for the image generation to complete. {e}")
+            time.sleep(5)
+        except StaleElementReferenceException as e:
+            logger.error(f"StaleElement while waiting for the image generation to complete. {e}")
+            time.sleep(5)
+        except Exception as e:
+            if attempt == 3:
+                logger.error(f"Error while waiting for the image generation to complete. {e} \nEscaping ...")
+                return False
+            attempt += 1
+            logger.error(f"Error while waiting for the image generation to complete. {e}\nAttempt = {attempt}")
+            time.sleep(5)
 
 def get_image_urls(driver:webdriver.Chrome):
     logger.info("Getting image URLs from Ideogram.")
