@@ -68,6 +68,14 @@ def controller_thread(driver_pool, global_lock, row) -> None:
             col_A_lr = gsheet_writer.check_last_value_in_column(
                 spreadsheetId=spreadsheetId,
                 range_name=f"{sheet_name_put_data}!A2:A")
+            
+            get_last_sku = gg_utils.get_value_from_row(
+                gsheet_read=gsheet_read
+                range_name=f"{sheet_name_get_link}!A{col_A_lr - 1}"
+            )
+
+            
+
 
     except Exception as e:
         logger.error(f"Error in controller thread: {str(e)}")

@@ -1,4 +1,6 @@
 import base64
+from datetime import datetime
+import re
 import time
 
 def download_directly_with_selenium(driver, url, save_path):
@@ -69,3 +71,22 @@ def download_directly_with_selenium(driver, url, save_path):
     
     except Exception as e:
         print(f"Fetch method all failed: {e}")
+
+def sku_generator(last_sku:str):
+    prefix = "THSK"
+
+    date_today = datetime.now().strftime("%y%m%d")
+    lst_sku_match = re.search(rf"{prefix}\d{6}(\d{3})$", last_sku)
+    if lst_sku_match:
+        
+    date_extract = re.search(rf"{prefix}(\d{6})\d{3}$", last_sku)
+    if date_extract:
+        date_last_sku = date_extract.group(1)
+        date_last = datetime.strptime(date_last_sku, "%y%m%d").date()
+        if date_last == datetime.today().date():
+
+
+    datetime.today()
+    if lst_sku_match:
+
+    return next_sku

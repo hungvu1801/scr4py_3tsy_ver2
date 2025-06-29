@@ -6,4 +6,5 @@ load_dotenv()
 
 if __name__ == "__main__":
     # test_check_last_row()
-    test_read_gsheet()
+    # test_read_gsheet()
+    test_write_gsheet()
