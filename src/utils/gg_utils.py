@@ -17,7 +17,8 @@ from googleapiclient.discovery import build
 from src.logger import setup_logger
 from src.settings import LOG_DIR, SCOPES
 
-logger = setup_logger(name="IdeogramLogger", log_dir=f"{LOG_DIR}/ideogram_logs")
+os.makedirs(f"{LOG_DIR}/utils_logs", exist_ok=True)
+logger = setup_logger(name="UtilsLogger", log_dir=f"{LOG_DIR}/utils_logs")
 
 def download_media(
         url:str, 

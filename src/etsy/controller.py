@@ -12,8 +12,8 @@ from src.etsy.service import initiate_drivers, card_scraping
 from src.GSheetWriteRead import GSheetWrite, GSheetRead
 from src.open_driver import open_gemlogin_driver, close_gemlogin_driver
 from src.logger import setup_logger
-from src.settings import LOG_DIR, DATA_DOWNLOAD
-from src.utils import gg_utils
+from src.settings import LOG_DIR
+from src.utils import gg_utils, utils
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 load_dotenv()
@@ -70,11 +70,11 @@ def controller_thread(driver_pool, global_lock, row) -> None:
                 range_name=f"{sheet_name_put_data}!A2:A")
             
             get_last_sku = gg_utils.get_value_from_row(
-                gsheet_read=gsheet_read
+                gsheet_read=gsheet_read,
                 range_name=f"{sheet_name_get_link}!A{col_A_lr - 1}"
             )
-
             
+            data_skus = utils.data_construct_for_gsheet()
 
 
     except Exception as e:
@@ -99,7 +99,7 @@ def controller_main():
     gsheet_read = GSheetRead(
         service=service,)
     
-    g_lock = Thread.lock()
+    global_lock = Thread.lock()
     while True:
         try:
             row_generator = gsheet_read.filter_data_by_column_get_row(
@@ -113,6 +113,6 @@ def controller_main():
                 logger.info("Empty")
             with ThreadPoolExecutor(max_workers=3) as executor:
                 for row in row_lst:
-                    executor.submit(controller_thread, drivers_pool, row)
+                    executor.submit(controller_thread, drivers_pool, global_lock, row)
         except Exception as e:
             logger.error(f"Error in controller main {e}")

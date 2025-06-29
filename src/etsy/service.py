@@ -21,8 +21,8 @@ from src.logger import setup_logger
 from src.open_driver import open_gemlogin_driver, close_gemlogin_driver
 from src.GSheetWriteRead import GSheetWrite
 from src.settings import ETSY_URL, WAIT_TIME, DATA_DOWNLOAD, LOG_DIR
+from src.utils.utils import sku_generator, data_construct_for_gsheet
 
-# from src.utils.gg_utils import check_credentials
 
 os.makedirs(f"{LOG_DIR}/etsy_scraper", exist_ok=True)
 logger = setup_logger(name="EtsyScraper", log_dir=f"{LOG_DIR}/etsy_scraper")
@@ -321,3 +321,12 @@ def initiate_drivers() -> list:
     if len(active_drivers) < num_driver or len(active_drivers) == 0:
         return None
     return active_drivers
+
+def generate_skus(last_skus: str, length: int):
+    data_skus = []
+    next_sku = sku_generator(last_skus)
+    for _ in range(length):
+        data_skus.append([next_sku])
+        cur_sku = next_sku
+        next_sku = sku_generator(cur_sku)
+    return data_skus

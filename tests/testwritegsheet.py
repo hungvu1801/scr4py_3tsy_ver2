@@ -28,7 +28,7 @@ def test_write_gsheet():
     service = build('sheets', 'v4', credentials=credentials)
     gsheet_writer = GSheetWrite(
         service=service)
-    gsheet_writer.write_to_gsheet_value(spreadsheetId=spreadsheetId, range_name="GetLink!A3", data=["test0", "test1", "test2"])
+    gsheet_writer.write_to_gsheet_value(spreadsheetId=spreadsheetId, range_name="GetLink!A3", data=[["test0"], ["test1"], ["test2"]])
 
     # gsheet_writer.write_to_gsheet_value("A26:A27", [["test"], ["test2"]])
     # for i in range(11):
