@@ -10,9 +10,12 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import NoSuchElementException, TimeoutException, WebDriverException
-from typing import Generator, Dict, List, Optional
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
 
+from typing import Generator, Dict, List, Optional
 from src.assets import update_cols_etsy
 from src.logger import setup_logger
 from src.open_driver import open_gemlogin_driver, close_gemlogin_driver
@@ -25,7 +28,7 @@ os.makedirs(f"{LOG_DIR}/etsy_scraper", exist_ok=True)
 logger = setup_logger(name="EtsyScraper", log_dir=f"{LOG_DIR}/etsy_scraper")
 
 
-def card_scraping(driver: webdriver.Chrome, url: str, numpage: int, store: str) -> Generator[Dict[str, str], None, None]:
+def card_scraping(driver: webdriver.Chrome, url: str, store: str,):
     """
     Scrape product cards from multiple pages.
     
@@ -38,95 +41,89 @@ def card_scraping(driver: webdriver.Chrome, url: str, numpage: int, store: str) 
         Dict containing product information
     """
     current_page = 0
-    current_url = url
-    driver.get(current_url)
+
+    driver.get(url)
     # random_crawling(driver, is_card=True)
     time.sleep(random.uniform(2, 5))
     
-    
+    data = {
+        "img_url": []
+    }
     # Store the parent window handle
-    parent_window = driver.current_window_handle
-    while current_page < numpage:
+    # parent_window = driver.current_window_handle
+    while True:
         current_page += 1
-        
-        try:
-            driver.implicitly_wait(WAIT_TIME)
-            
-            logger.info(f"{'>' * 27} Scraping page {current_page}/{numpage} {'<' * 27}")
-            
-            # Get all items on the page
-            items = driver.find_elements(By.XPATH, "//div[contains(@class, 'responsive-listing-grid')]/div")
-            logger.info(f"Found {len(items)} items on page {current_page}")
-            
-            if not items:
-                logger.warning(f"No items found on page {current_page}")
-                break
-        #############################################################################################################
-            for i in range(len(items)):
-                try:
-                    items = driver.find_elements(By.XPATH, "//div[contains(@class, 'responsive-listing-grid')]/div")
-                    item_url = items[i].find_element(By.XPATH, ".//a").get_attribute("href")
-                    if not item_url:
-                        logger.warning(f"No URL found for item {i} on page {current_page}")
-                        continue
-                    
-                    # Scroll to item and click
-                    driver.execute_script("arguments[0].scrollIntoView({ behavior: 'smooth', block: 'center' });", items[i])
-                    items[i].click()
-                    time.sleep(random.uniform(2, 5))
-                    
-                    # Switch to new tab
 
-                    chwd = driver.window_handles
-                    for window in chwd:
-                        if window != parent_window:
-                            driver.switch_to.window(window)
-                            break
-                    
-                    logger.info(f"Processing item {i}/{len(items)}: {item_url}")
-                    product_datas = detail_scraping(driver=driver, url=item_url, store=store)
-                    
-                    if product_datas:
-                        for product_data in product_datas:
-                            yield product_data
-                    
-                except NoSuchElementException:
-                    logger.warning(f"Could not find link for item {i} on page {current_page}")
+        #############################################################################################################
+            # for i in range(len(items)):
+
+        try:
+            items = WebDriverWait(driver, 10).until(
+                EC.presence_of_all_elements_located(
+                    (By.XPATH, 
+                    "///div[contains(@class, 'responsive-listing-grid')]/div")))
+
+            for i, item in enumerate(items):
+                item_img = item.find_element(By.XPATH, ".//img").get_attribute("src")
+                logger.info(f"image url found :{i} : {item_img}")
+                driver.execute_script("arguments[0].scrollIntoView({ behavior: 'smooth', block: 'center' });", item)
+                if not item_img:
+                    logger.warning(f"No URL img found for item {i} on page {current_page}")
                     continue
-                except Exception as e:
-                    logger.error(f"Error processing item {i} on page {current_page}: {str(e)}")
-                    continue
-                finally:
-                    # Close current tab and switch back to parent
-                    driver.close()
-                    driver.switch_to.window(parent_window)
-                    time.sleep(random.uniform(2, 5))
+                data["img_url"].append(item_img)
+
+            # Scroll to item and click
+            # items[i].click()
+            time.sleep(random.uniform(2, 5))
             
-            ## Check for next page
-            try:
-                # Scroll to bottom to ensure pagination is visible
-                # driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-                time.sleep(2)  # Wait for any lazy-loaded content
-                
-                next_url = get_next_page_url(driver)
-                if next_url:
-                    current_url = next_url
-                    # driver.get(current_url)
-                    logger.info(f"Moving to next page: {next_url}")
-                else:
-                    logger.info("Reached last page or no next page found")
-                    break
-                    
-            except Exception as e:
-                logger.error(f"Error checking pagination: {str(e)}")
+
+            # Switch to new tab
+
+            # chwd = driver.window_handles
+            # for window in chwd:
+            #     if window != parent_window:
+            #         driver.switch_to.window(window)
+            #         break
+            
+            # logger.info(f"Processing item {i}/{len(items)}: {item_url}")
+            # product_datas = detail_scraping(driver=driver, url=item_url, store=store)
+            
+            # if product_datas:
+            #     for product_data in product_datas:
+            #         yield product_data
+            
+        except NoSuchElementException as e:
+            logger.warning(f"Could not find link for item {i} on page {current_page}")
+        except TimeoutException as e:
+            logger.error(f"Card craping error - Shop {store}")
+        except Exception as e:
+            logger.error(f"Error processing item {i} on page {current_page}: {str(e)}")
+            
+        
+        ## Check for next page
+        try:
+            # Scroll to bottom to ensure pagination is visible
+            # driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+            time.sleep(2)  # Wait for any lazy-loaded content
+            
+            next_url = get_next_page_url(driver)
+            if not next_url:
+                logger.info("Reached last page or no next page found")
                 break
-                
+                    
+        except Exception as e:
+            logger.error(f"Error checking pagination: {str(e)}")
+            break
         except WebDriverException as e:
             logger.error(f"WebDriver error on page {current_page}: {str(e)}")
             break
         except Exception as e:
             logger.error(f"Unexpected error on page {current_page}: {str(e)}")
             break
+        finally:
+            # Close current tab and switch back to parent
+            time.sleep(random.uniform(2, 5))
+            return data
 
 def get_next_page_url(driver: webdriver.Chrome) -> Optional[str]:
     """

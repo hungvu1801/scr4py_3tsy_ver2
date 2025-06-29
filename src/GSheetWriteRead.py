@@ -64,9 +64,6 @@ class GSheetWrite:
     #             body=update_body
     #         ).execute()
 
-    #         last_row = self.get_last_row(copy_data)
-    #         logger.info(f"Next Last row: {last_row}")
-    #         self.queue.clear()
     #     except Exception as err:
     #         logger.error(f'GSheetWrite: An error occurred: {err}')
 
@@ -95,7 +92,7 @@ class GSheetWrite:
             logger.error(f'GSheetWrite: An error occurred: {err}')
             return
 
-    def check_last_value_in_column(self, range_name) -> int:
+    def check_last_value_in_column(self, spreadsheetId, range_name) -> int:
         """
         Check the last value in the column
         If not hit the last row, return 2
@@ -105,7 +102,7 @@ class GSheetWrite:
             _result = (
                 self.service.spreadsheets()
                 .values()
-                .get(spreadsheetId=self.spreadsheetId, range=range_name)
+                .get(spreadsheetId=spreadsheetId, range=range_name)
                 .execute()
                 )
 

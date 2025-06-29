@@ -114,7 +114,8 @@ def get_image_urls(driver:webdriver.Chrome):
     try:
         img_elems = WebDriverWait(driver, 30).until(
                 EC.presence_of_all_elements_located(
-                    (By.XPATH, "//div[contains(@class, 'MuiGrid-root MuiGrid-container MuiGrid-spacing-xs-1')]/div")))
+                    (By.XPATH, 
+                     "//div[contains(@class, 'MuiGrid-root MuiGrid-container MuiGrid-spacing-xs-1')]/div")))
 
     except TimeoutException as e:
         logger.error(f"Timeout while waiting for image elements: {str(e)}")
