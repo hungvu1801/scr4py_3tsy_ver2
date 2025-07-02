@@ -1,2 +1,1 @@
-@echo off
-docker run -it hungvu1801/scraper_etsy:latest %1 %2 %3
+f:/auto_etsy/.venv/Scripts/python.exe f:/auto_etsy/main_crawling.py

@@ -14,7 +14,7 @@ from selenium.common.exceptions import NoSuchElementException, TimeoutException,
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-from typing import Generator, Dict, List, Optional
+from typing import Dict, List, Optional, Any
 from src.assets import update_cols_etsy
 from src.logger import setup_logger
 from src.open_driver import open_gemlogin_driver, close_gemlogin_driver
@@ -405,7 +405,7 @@ def determined_crawling(driver: webdriver.Chrome) -> None:
         logger.error(f"Error during determined crawling: {str(e)}")
 
 
-def initiate_drivers() -> list:
+def initiate_drivers() -> List[Any, int]:
     try:
         num_driver = int(os.getenv("NUMDRIVER", "1"))
         active_drivers = list()
@@ -413,7 +413,7 @@ def initiate_drivers() -> list:
             profile = int(os.getenv(f"PROFILE_ID_CRAWL_{i}", str(i)))
             driver = open_gemlogin_driver(profile_id=profile)
             if driver:
-                active_drivers.append(driver)
+                active_drivers.append((driver, profile))
         if len(active_drivers) < num_driver or len(active_drivers) == 0:
             return list()
     except AttributeError as e:

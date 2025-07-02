@@ -13,7 +13,7 @@ from src.GSheetWriteRead import GSheetWrite, GSheetRead
 from src.logger import setup_logger
 from src.settings import LOG_DIR
 from src.utils import gg_utils, utils
-
+from src.open_driver import close_gemlogin_driver
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 load_dotenv()
@@ -33,7 +33,7 @@ def controller_thread(driver_pool: list, global_lock: Lock, row: str) -> None:
     """
     logger.info("In controller_thread")
     with global_lock:
-        driver = driver_pool.pop() if driver_pool else None
+        driver, profile = driver_pool.pop() if driver_pool else None
     if not driver:
         logger.error("Empty driver pool.")
         return
@@ -118,7 +118,7 @@ def controller_thread(driver_pool: list, global_lock: Lock, row: str) -> None:
     finally:
         if driver:
             with global_lock:
-                driver_pool.append(driver)
+                driver_pool.append((driver, profile))
 
 def controller_main() -> None:
     num_driver = int(os.getenv("NUMDRIVER", "1"))
@@ -130,28 +130,39 @@ def controller_main() -> None:
     if not drivers_pool:
         logger.error("Error controller main : making drivers ")
         return
-    
-    credentials = gg_utils.check_credentials()
-    service = build('sheets', 'v4', credentials=credentials)
-    
-    gsheet_read = GSheetRead(
-        service=service,)
-    
-    global_lock = Lock()
-    while True:
-        try:
-            row_generator = gsheet_read.filter_data_by_column_get_row(
-                filter_column="B", 
-                filter_value="Pending",
-                spreadsheetId=spreadsheetId, 
-                sheet_name=sheet_name_read)
-            
-            row_lst = list(row_generator)
-            logger.info(f"Rows to process: {row_lst}")
-            if len(row_lst) == 0:
-                logger.info("Empty")
-            with ThreadPoolExecutor(max_workers=num_driver) as executor:
-                for row in row_lst:
-                    executor.submit(controller_thread, drivers_pool, global_lock, row)
-        except Exception as e:
-            logger.error(f"Error in controller main {e}")
+    try:
+        credentials = gg_utils.check_credentials()
+        service = build('sheets', 'v4', credentials=credentials)
+        
+        gsheet_read = GSheetRead(
+            service=service,)
+        
+        global_lock = Lock()
+        count_for_wait = 0
+        while count_for_wait <= 5:
+            try:
+                row_generator = gsheet_read.filter_data_by_column_get_row(
+                    filter_column="B", 
+                    filter_value="Pending",
+                    spreadsheetId=spreadsheetId, 
+                    sheet_name=sheet_name_read)
+                
+                row_lst = list(row_generator)
+                if len(row_lst) == 0:
+                    logger.info("Empty row list")
+                    time.sleep(120)
+                    count_for_wait += 1
+                    continue
+                count_for_wait = 0
+                with ThreadPoolExecutor(max_workers=num_driver) as executor:
+                    for row in row_lst:
+                        executor.submit(controller_thread, drivers_pool, global_lock, row)
+
+            except Exception as e:
+                logger.error(f"Error in controller main {e}")
+    except Exception as e:
+        logger.error(f"Error in controller main {e}")
+    finally:
+        logger.info(f"Closing all drivers...")
+        for _, profile in drivers_pool:
+            close_gemlogin_driver(profile)
