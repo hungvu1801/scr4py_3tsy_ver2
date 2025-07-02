@@ -19,7 +19,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 load_dotenv()
 
 os.makedirs(f"{LOG_DIR}/etsy_logs", exist_ok=True)
-logger = setup_logger(name="IdeogramLogger", log_dir=f"{LOG_DIR}/etsy_logs")
+logger = setup_logger(name="EtsyScraper", log_dir=f"{LOG_DIR}/etsy_logs")
 
 
 def controller_thread(driver_pool: list, global_lock: Lock, row: str) -> None:
@@ -38,7 +38,7 @@ def controller_thread(driver_pool: list, global_lock: Lock, row: str) -> None:
         logger.error("Empty driver pool.")
         return
     sheet_name_get_link = os.getenv("SHEET_FETCH_URL")
-    sheet_name_put_data = os.getenv("SHEET_NAME")
+    sheet_name_put_data = os.getenv("SHEET_NAME_IMG")
     spreadsheetId = os.getenv("SPREADSHEET_ID")
     credentials = gg_utils.check_credentials()
     service = build('sheets', 'v4', credentials=credentials)
@@ -64,6 +64,7 @@ def controller_thread(driver_pool: list, global_lock: Lock, row: str) -> None:
             store=store)
         if len(data["img_url"]):
             with global_lock:
+                logger.info(f"Data found. Writing data to sheet")
                 # Get last column
                 col_A_lr = gsheet_writer.check_last_value_in_column(
                     spreadsheetId=spreadsheetId,
@@ -72,7 +73,8 @@ def controller_thread(driver_pool: list, global_lock: Lock, row: str) -> None:
                 # Get last sku in column A
                 last_sku_value = gg_utils.get_value_from_row(
                     gsheet_read=gsheet_read,
-                    range_name=f"{sheet_name_put_data}!A{col_A_lr - 1}"
+                    range_name=f"{sheet_name_put_data}!A{col_A_lr - 1}",
+                    spreadsheetId=spreadsheetId
                 )
                 logger.info(f"Last SKUs: {last_sku_value}")
                 # Generate skus
@@ -110,7 +112,7 @@ def controller_thread(driver_pool: list, global_lock: Lock, row: str) -> None:
                 range_name=f"{sheet_name_get_link}!B{row}",
                 data="Done")
                 # Wait for data to fully updated
-        
+        logger.info(f"Data written to sheet.")
     except Exception as e:
         logger.error(f"Error in controller thread: {str(e)}")
     finally:
@@ -145,6 +147,7 @@ def controller_main() -> None:
                 sheet_name=sheet_name_read)
             
             row_lst = list(row_generator)
+            logger.info(f"Rows to process: {row_lst}")
             if len(row_lst) == 0:
                 logger.info("Empty")
             with ThreadPoolExecutor(max_workers=num_driver) as executor:

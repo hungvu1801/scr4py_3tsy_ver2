@@ -10,7 +10,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
-from selenium.common.exceptions import NoSuchElementException, TimeoutException, WebDriverException
+from selenium.common.exceptions import NoSuchElementException, TimeoutException, WebDriverException, StaleElementReferenceException
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
@@ -23,8 +23,8 @@ from src.settings import ETSY_URL, WAIT_TIME, DATA_DOWNLOAD, LOG_DIR
 from src.utils.utils import sku_generator, data_construct_for_gsheet
 
 
-os.makedirs(f"{LOG_DIR}/etsy_scraper", exist_ok=True)
-logger = setup_logger(name="EtsyScraper", log_dir=f"{LOG_DIR}/etsy_scraper")
+os.makedirs(f"{LOG_DIR}/etsy_logs", exist_ok=True)
+logger = setup_logger(name="EtsyScraper", log_dir=f"{LOG_DIR}/etsy_logs")
 
 
 def card_scraping(driver: webdriver.Chrome, url: str, store: str,) -> Dict[str, List]:
@@ -36,7 +36,7 @@ def card_scraping(driver: webdriver.Chrome, url: str, store: str,) -> Dict[str, 
         url: Starting URL to scrape
         numpage: Maximum number of pages to scrape
         
-    Yields:
+    Returns:
         Dict containing product information
     """
     logger.info("In card scraping..")
@@ -45,6 +45,30 @@ def card_scraping(driver: webdriver.Chrome, url: str, store: str,) -> Dict[str, 
     driver.get(url)
     # random_crawling(driver, is_card=True)
     time.sleep(random.uniform(2, 5))
+    while True:
+        try:
+            nav_elements = WebDriverWait(driver, 10).until(
+                EC.presence_of_all_elements_located(
+                    (By.XPATH, 
+                    "//nav[@class='wt-hide-xs wt-show-lg category-nav-button-menu']"
+                    )))
+            if nav_elements:
+                break
+        except TimeoutException as e:
+            logger.error(f"No navigation found")
+        
+        try:
+            capchas = WebDriverWait(driver, 10).until(
+                        EC.presence_of_all_elements_located(
+                            (By.XPATH, 
+                            "//iframe[@title='DataDome Device Check']")))
+            if capchas:
+                time.sleep(10)
+                driver.refresh()
+        except TimeoutException as e:
+            logger.error(f"No capcha found - Shop {store}")
+            break
+
     
     data = {
         "img_url": []
@@ -52,6 +76,7 @@ def card_scraping(driver: webdriver.Chrome, url: str, store: str,) -> Dict[str, 
     # Store the parent window handle
     # parent_window = driver.current_window_handle
     while True:
+        determined_crawling(driver=driver)
         current_page += 1
 
         #############################################################################################################
@@ -138,13 +163,14 @@ def get_next_page_url(driver: webdriver.Chrome) -> Optional[str]:
         URL of next page or None if no next page
     """
     try:
+        logger.info("In get_next_page_url")
         # check if there is only one page
         pages = driver.find_elements(
             By.XPATH, 
             "//div[@class='wt-show-lg']/nav[@aria-label='Pagination of listings']"
             )
-        if len(pages) == 1:
-            return None
+        # if len(pages) == 1:
+        #     return None
         # get the first page navigation element
         pages = driver.find_elements(
             By.XPATH, 
@@ -163,14 +189,18 @@ def get_next_page_url(driver: webdriver.Chrome) -> Optional[str]:
         
         if not disabled_links:
             next_page_link = last_elem.find_element(By.XPATH, ".//a")
+            href = next_page_link.get_attribute("href")
             last_elem.click()
             time.sleep(random.uniform(1, 2))
-            return next_page_link.get_attribute("href")
+            return href
         
         return None
         
     except NoSuchElementException:
         logger.info("No pagination found")
+        return None
+    except StaleElementReferenceException:
+        logger.info("Stale element reference exception")
         return None
 
 def detail_scraping(driver: webdriver.Chrome, url: str, store: str) -> Optional[List[Dict[str, str]]]:

@@ -1,4 +1,4 @@
-from typing import Dict, List, Any, Union
+from typing import Dict, Any, Union, Generator
 from googleapiclient.errors import HttpError
 from src.logger import setup_logger
 
@@ -81,7 +81,7 @@ class GSheetRead:
             logger.error(f"An error occurred: {error}")
             return error
     
-    def filter_data_by_column_get_row(self, filter_column: str, filter_value:str, spreadsheetId: str, sheet_name: str) -> List[int]:
+    def filter_data_by_column_get_row(self, filter_column: str, filter_value:str, spreadsheetId: str, sheet_name: str) -> Generator[int, None, None]:
         """
         Filter data by column and value
         """
