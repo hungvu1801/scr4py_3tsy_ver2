@@ -19,3 +19,5 @@ ThisNotSecretKeyAtAll/*
 images/*
 
 images_sample/*
+
+*.bat

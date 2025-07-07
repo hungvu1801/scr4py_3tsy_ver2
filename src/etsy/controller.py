@@ -11,7 +11,7 @@ import time
 from src.etsy.service import initiate_drivers, card_scraping, generate_skus, extract_store_name
 from src.GSheetWriteRead import GSheetWrite, GSheetRead
 from src.logger import setup_logger
-from src.settings import LOG_DIR
+from src.settings import IMAGE_DOWNLOAD_SAMPLE, LOG_DIR
 from src.utils import gg_utils, utils
 from src.open_driver import close_gemlogin_driver
 
@@ -111,8 +111,15 @@ def controller_thread(driver_pool: list, global_lock: Lock, row: str) -> None:
                 spreadsheetId=spreadsheetId, 
                 range_name=f"{sheet_name_get_link}!B{row}",
                 data="Done")
-                # Wait for data to fully updated
-        logger.info(f"Data written to sheet.")
+        # Download img by skus
+        for sku_name, img in zip(data_skus, data["img_url"]):
+            logger.info(img)
+            gg_utils.download_media(
+                url=img,
+                media_type="img",
+                name=f"{sku_name}.png",
+                directory=IMAGE_DOWNLOAD_SAMPLE,)
+
     except Exception as e:
         logger.error(f"Error in controller thread: {str(e)}")
     finally:
@@ -148,11 +155,20 @@ def controller_main() -> None:
                     sheet_name=sheet_name_read)
                 
                 row_lst = list(row_generator)
+                # Check if empty row
                 if len(row_lst) == 0:
                     logger.info("Empty row list")
                     time.sleep(120)
                     count_for_wait += 1
                     continue
+                ######
+                del row_lst # delete to clear
+                ######
+                row_generator = gsheet_read.filter_data_by_column_get_row(
+                    filter_column="B", 
+                    filter_value="Pending",
+                    spreadsheetId=spreadsheetId, 
+                    sheet_name=sheet_name_read)
                 count_for_wait = 0
                 with ThreadPoolExecutor(max_workers=num_driver) as executor:
                     for row in row_lst:

@@ -405,7 +405,7 @@ def determined_crawling(driver: webdriver.Chrome) -> None:
         logger.error(f"Error during determined crawling: {str(e)}")
 
 
-def initiate_drivers() -> List[Any, int]:
+def initiate_drivers() -> List:
     try:
         num_driver = int(os.getenv("NUMDRIVER", "1"))
         active_drivers = list()

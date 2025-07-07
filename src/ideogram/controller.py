@@ -66,14 +66,21 @@ def controller() -> None:
                 sheet_name=sheet_name)
             # Check for empty generator
             gen = list(row_generator)
+            logger.info(f"gen list : {gen}")
             if not gen:
                 time.sleep(120)
                 count_for_wait += 1
+                logger.info(f"Wait time {count_for_wait}")
                 continue
             del gen
 
             while True:
                 try:
+                    row_generator = gsheet_read.filter_data_by_column_get_row(
+                        filter_column="H", 
+                        filter_value="Pending", 
+                        spreadsheetId=spreadsheetId, 
+                        sheet_name=sheet_name)
                     row_num = next(row_generator)
                     prompt = gg_utils.get_value_from_row(
                         gsheet_read=gsheet_read,
