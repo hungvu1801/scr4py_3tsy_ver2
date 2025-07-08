@@ -221,20 +221,36 @@ def check_ratio(driver:webdriver.Chrome) -> None:
 def settings_ratio(driver:webdriver.Chrome, heigth, width) -> None:
     logger.info(f"Setting ratio to {heigth}x{width} for Ideogram.")
     try:
-        driver.find_element(
-            By.XPATH, "//div[@class='MuiBox-root css-1dktxqu']/div[3]").click()
+        WebDriverWait(driver, 30).until(
+            EC.presence_of_element_located(
+                (By.XPATH, 
+                "//div[@class='MuiBox-root css-1dktxqu']/div[3]"))
+                ).click()
+        # driver.find_element(
+        #     By.XPATH, "//div[@class='MuiBox-root css-1dktxqu']/div[3]").click()
         time.sleep(1)
         # Click custom button
-        driver.find_element(
-            By.XPATH, "//div[@class='MuiBox-root css-12lxzkk']/button[2]").click()
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located(
+                (By.XPATH, 
+                "//div[@class='MuiBox-root css-12lxzkk']/button[2]"))
+                ).click()
+        # driver.find_element(
+        #     By.XPATH, "//div[@class='MuiBox-root css-12lxzkk']/button[2]").click()
         time.sleep(1)
         # input width
         input_width = driver.find_element(By.XPATH, "//div[@class='MuiBox-root css-125dcud']/div[1]/div[1]//input")
+        
         input_width.clear()
+        time.sleep(2)
         input_width.send_keys(width)
 
         # input heigth
-        input_height = driver.find_element(By.XPATH, "//div[@class='MuiBox-root css-125dcud']/div[1]/div[2]//input")
+        input_height = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located(
+                (By.XPATH, 
+                "//div[@class='MuiBox-root css-125dcud']/div[1]/div[2]//input"))
+                )
         input_height.send_keys("delete")
         actions = ActionChains(driver)
         actions.double_click(input_height).perform()
@@ -246,6 +262,10 @@ def settings_ratio(driver:webdriver.Chrome, heigth, width) -> None:
         # Save
         driver.find_element(By.XPATH, "//div[@class='MuiBox-root css-1ks2d2u']/button[2]").click()
         time.sleep(1)
+    except StaleElementReferenceException as e:
+        logger.error(f"Error while checking or setting ratio: {str(e)}")
+    except TimeoutException as e:
+        logger.error(f"Error while checking or setting ratio: {str(e)}")
     except Exception as e:
         logger.error(f"Error while checking or setting ratio: {str(e)}")
 
