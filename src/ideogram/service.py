@@ -231,12 +231,12 @@ def check_ratio(driver:webdriver.Chrome) -> None:
         ratio_checked = ratio_elem.text
         if ratio_checking != ratio_checked:
             # Click ratio button
-            settings_ratio(driver, heigth, width)
+            settings_ratio(driver, height, width)
         else:
             return None
 
-def settings_ratio(driver:webdriver.Chrome, heigth, width) -> None:
-    logger.info(f"Setting ratio to {heigth}x{width} for Ideogram.")
+def settings_ratio(driver:webdriver.Chrome, height: int, width: int) -> None:
+    logger.info(f"Setting ratio to {height}x{width} for Ideogram.")
     try:
         WebDriverWait(driver, 30).until(
             EC.presence_of_element_located(
