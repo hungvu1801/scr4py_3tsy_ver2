@@ -261,7 +261,7 @@ def settings_ratio(driver:webdriver.Chrome, height: int, width: int) -> None:
         time.sleep(2)
         input_width.send_keys(width)
 
-        # input heigth
+        # input height
         input_height = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located(
                 (By.XPATH, 
