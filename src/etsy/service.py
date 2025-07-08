@@ -92,9 +92,7 @@ def card_scraping(driver: webdriver.Chrome, url: str, store: str,) -> Dict[str, 
             break
         for i, item in enumerate(items):
             try:
-                item_img = WebDriverWait(driver, 10).until(
-                    EC.presence_of_element_located(
-                        (By.XPATH, ".//img"))).get_attribute("src")
+                item_img = item.find_element(By.XPATH, ".//img").get_attribute("src")
                 logger.info(f"image url found :{i} : {item_img}")
                 driver.execute_script("arguments[0].scrollIntoView({ behavior: 'smooth', block: 'center' });", item)
                 if not item_img:
@@ -104,7 +102,7 @@ def card_scraping(driver: webdriver.Chrome, url: str, store: str,) -> Dict[str, 
 
                 # Scroll to item and click
                 # items[i].click()
-                time.sleep(random.uniform(2, 5))
+                time.sleep(random.uniform(1, 3))
             
 
             # Switch to new tab
@@ -121,7 +119,8 @@ def card_scraping(driver: webdriver.Chrome, url: str, store: str,) -> Dict[str, 
             # if product_datas:
             #     for product_data in product_datas:
             #         yield product_data
-            
+            except StaleElementReferenceException as e:
+                logger.error(f"Stale element {current_page}: {str(e)}")
             except TimeoutException as e:
                 logger.warning(f"Could not find link for item {i} on page {current_page}")
                 continue
@@ -422,13 +421,16 @@ def initiate_drivers() -> List:
     return active_drivers
 
 def generate_skus(last_skus: str, length: int) -> list:
-    data_skus = list()
-    next_sku = sku_generator(last_skus)
-    for _ in range(length):
-        data_skus.append([next_sku])
-        cur_sku = next_sku
-        next_sku = sku_generator(cur_sku)
-    return data_skus
+    try:
+        data_skus = list()
+        next_sku = sku_generator(last_skus)
+        for _ in range(length):
+            data_skus.append([next_sku])
+            cur_sku = next_sku
+            next_sku = sku_generator(cur_sku)
+        return data_skus
+    except Exception as e:
+        logger.error(f"Error in generate_skus : {e}")
 
 def extract_store_name(str_url: str) -> str:
     str1 = re.search(r"https://www.etsy.com/shop/([A-Za-z0-9]+)\?.*", str_url)

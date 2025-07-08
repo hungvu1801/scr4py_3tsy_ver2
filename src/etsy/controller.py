@@ -11,7 +11,7 @@ import time
 from src.etsy.service import initiate_drivers, card_scraping, generate_skus, extract_store_name
 from src.GSheetWriteRead import GSheetWrite, GSheetRead
 from src.logger import setup_logger
-from src.settings import IMAGE_DOWNLOAD_SAMPLE, LOG_DIR
+from src.settings import IMAGE_DOWNLOAD_ETSY, LOG_DIR
 from src.utils import gg_utils, utils
 from src.open_driver import close_gemlogin_driver
 
@@ -100,10 +100,15 @@ def controller_thread(driver_pool: list, global_lock: Lock, row: str) -> None:
                     spreadsheetId=spreadsheetId, 
                     range_name=f"{sheet_name_put_data}!E{col_A_lr}", 
                     data=data_urls)
-                # Write to column G: img_url
+                # Write to column G: Pending
                 gsheet_writer.write_to_gsheet_value(
                     spreadsheetId=spreadsheetId, 
                     range_name=f"{sheet_name_put_data}!G{col_A_lr}", 
+                    data=data_status)
+                # Write to column H: Pending
+                gsheet_writer.write_to_gsheet_value(
+                    spreadsheetId=spreadsheetId, 
+                    range_name=f"{sheet_name_put_data}!H{col_A_lr}", 
                     data=data_status)
                 time.sleep(5)
             # Update status in 
@@ -113,12 +118,16 @@ def controller_thread(driver_pool: list, global_lock: Lock, row: str) -> None:
                 data="Done")
         # Download img by skus
         for sku_name, img in zip(data_skus, data["img_url"]):
+            if instance(sku_name, list):
+                name = sku_name[0]
+            else:
+                name = sku_name
             logger.info(img)
             gg_utils.download_media(
                 url=img,
                 media_type="img",
-                name=f"{sku_name}.png",
-                directory=IMAGE_DOWNLOAD_SAMPLE,)
+                name=f"{name}.png",
+                directory=IMAGE_DOWNLOAD_ETSY,)
 
     except Exception as e:
         logger.error(f"Error in controller thread: {str(e)}")
@@ -161,9 +170,7 @@ def controller_main() -> None:
                     time.sleep(120)
                     count_for_wait += 1
                     continue
-                ######
-                del row_lst # delete to clear
-                ######
+                
                 row_generator = gsheet_read.filter_data_by_column_get_row(
                     filter_column="B", 
                     filter_value="Pending",
