@@ -214,11 +214,10 @@ def check_ratio(driver:webdriver.Chrome) -> None:
     ratio_checked = ratio_elem.text
     if ratio_checking != ratio_checked:
         # Click ratio button
-        settings_ratio(driver, heigth, width)
+        settings_ratio(driver, height, width)
     else:
         return None
-    width = int(os.environ.get("WIDTH"))
-    heigth = int(os.environ.get("HEIGHT"))
+
     while True:
         try:
             ratio_elem = WebDriverWait(driver, 30).until(
