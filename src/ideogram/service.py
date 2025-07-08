@@ -201,8 +201,8 @@ def generate_image(
 def check_ratio(driver:webdriver.Chrome) -> None:
     logger.info("Checking ratio settings for Ideogram.")
     ratio_checking = os.environ.get("RESOLUTION_SETTINGS")
-    width = os.environ.get("WIDTH")
-    heigth = os.environ.get("HEIGHT")
+    width = int(os.environ.get("WIDTH"))
+    heigth = int(os.environ.get("HEIGHT"))
     try:
         ratio_elem = WebDriverWait(driver, 30).until(
                 EC.presence_of_element_located(
@@ -241,7 +241,7 @@ def settings_ratio(driver:webdriver.Chrome, heigth, width) -> None:
         # input width
         input_width = driver.find_element(By.XPATH, "//div[@class='MuiBox-root css-125dcud']/div[1]/div[1]//input")
         
-        input_width.clear()
+        input_width.send_keys("delete")
         time.sleep(2)
         input_width.send_keys(width)
 
@@ -251,13 +251,11 @@ def settings_ratio(driver:webdriver.Chrome, heigth, width) -> None:
                 (By.XPATH, 
                 "//div[@class='MuiBox-root css-125dcud']/div[1]/div[2]//input"))
                 )
-        input_height.send_keys("delete")
         actions = ActionChains(driver)
         actions.double_click(input_height).perform()
+        input_height.send_keys("delete")
         time.sleep(1)
-        for char in heigth:
-            input_height.send_keys(char)
-            time.sleep(0.1)
+        input_height.send_keys(height)
 
         # Save
         driver.find_element(By.XPATH, "//div[@class='MuiBox-root css-1ks2d2u']/button[2]").click()
