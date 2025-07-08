@@ -202,7 +202,7 @@ def check_ratio(driver:webdriver.Chrome) -> None:
     logger.info("Checking ratio settings for Ideogram.")
     ratio_checking = os.environ.get("RESOLUTION_SETTINGS")
     width = int(os.environ.get("WIDTH"))
-    heigth = int(os.environ.get("HEIGHT"))
+    height = int(os.environ.get("HEIGHT"))
     try:
         ratio_elem = WebDriverWait(driver, 30).until(
                 EC.presence_of_element_located(
