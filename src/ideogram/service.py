@@ -217,6 +217,23 @@ def check_ratio(driver:webdriver.Chrome) -> None:
         settings_ratio(driver, heigth, width)
     else:
         return None
+    width = int(os.environ.get("WIDTH"))
+    heigth = int(os.environ.get("HEIGHT"))
+    while True:
+        try:
+            ratio_elem = WebDriverWait(driver, 30).until(
+                    EC.presence_of_element_located(
+                        (By.XPATH, 
+                        "//div[@class='MuiBox-root css-1dktxqu']/div[3]"))
+                        )
+        except TimeoutException:
+            return None
+        ratio_checked = ratio_elem.text
+        if ratio_checking != ratio_checked:
+            # Click ratio button
+            settings_ratio(driver, heigth, width)
+        else:
+            return None
 
 def settings_ratio(driver:webdriver.Chrome, heigth, width) -> None:
     logger.info(f"Setting ratio to {heigth}x{width} for Ideogram.")
