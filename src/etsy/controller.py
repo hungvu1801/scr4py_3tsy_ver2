@@ -118,7 +118,7 @@ def controller_thread(driver_pool: list, global_lock: Lock, row: str) -> None:
                 data="Done")
         # Download img by skus
         for sku_name, img in zip(data_skus, data["img_url"]):
-            if instance(sku_name, list):
+            if isinstance(sku_name, list):
                 name = sku_name[0]
             else:
                 name = sku_name
@@ -130,7 +130,7 @@ def controller_thread(driver_pool: list, global_lock: Lock, row: str) -> None:
                 directory=IMAGE_DOWNLOAD_ETSY,)
 
     except Exception as e:
-        logger.error(f"Error in controller thread: {str(e)}")
+        logger.error(f"Error in controller thread: {e}")
     finally:
         if driver:
             with global_lock:

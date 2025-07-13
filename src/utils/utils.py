@@ -40,11 +40,11 @@ def download_directly_with_selenium(driver, url, save_path):
                 image_data = base64.b64decode(base64_image)
                 with open(save_path, 'wb') as f:
                     f.write(image_data)
-                logger.info(f"download_directly_with_selenium - Downloaded via base64: {save_path}")
+                logger.info(f"Error - Downloaded via base64 : {save_path}")
                 return True
                 
         except Exception as e:
-            logger.error(f"download_directly_with_selenium - Base64 method failed: {e}")
+            logger.error(f"Error - Base64 method failed : {e}")
         
         # Method B: Use browser's fetch API
         fetch_script = f"""
@@ -69,34 +69,38 @@ def download_directly_with_selenium(driver, url, save_path):
                 image_data = base64.b64decode(base64_data)
                 with open(save_path, 'wb') as f:
                     f.write(image_data)
-                logger.info(f"download_directly_with_selenium - Downloaded via fetch: {save_path}")
+                logger.info(f"Error - Downloaded via fetch: {save_path}")
                 return True
                 
         except Exception as e:
-            logger.error(f"download_directly_with_selenium - Fetch method failed: {e}")
+            logger.error(f"Error - Fetch method failed: {e}")
         
         return False
     
     except Exception as e:
-        logger.error(f"Fetch method all failed: {e}")
+        logger.error(f"Error: Fetch method all failed: {e}")
 
 def sku_generator(last_sku: str) -> str:
-    prefix = "THSP"
-    date_today = datetime.now().strftime("%d%m%y")
-    lst_sku_match = re.search(rf"{prefix}\d{{6}}(\d+)$", last_sku)
-    if lst_sku_match:
-        last_order_num = int(lst_sku_match.group(1))
-    date_extract = re.search(rf"{prefix}(\d{{6}})\d+$", last_sku)
-    if date_extract:
-        date_last_sku = date_extract.group(1)
-        date_last = datetime.strptime(date_last_sku, "%d%m%y").date()
-        if date_last == datetime.today().date():
-            next_order_num = last_order_num + 1
-        else:
-            next_order_num = 1
-    if next_order_num < 999:
-        next_sku = f"{prefix}{date_today}{next_order_num:03d}"
-    return next_sku
+    try:
+        prefix = "THSP"
+        date_today = datetime.now().strftime("%d%m%y")
+        lst_sku_match = re.search(rf"{prefix}\d{{6}}(\d+)$", last_sku)
+        if lst_sku_match:
+            last_order_num = int(lst_sku_match.group(1))
+        date_extract = re.search(rf"{prefix}(\d{{6}})\d+$", last_sku)
+        if date_extract:
+            date_last_sku = date_extract.group(1)
+            date_last = datetime.strptime(date_last_sku, "%d%m%y").date()
+            if date_last == datetime.today().date():
+                next_order_num = last_order_num + 1
+            else:
+                next_order_num = 1
+        if next_order_num < 999:
+            next_sku = f"{prefix}{date_today}{next_order_num:03d}"
+        return next_sku
+    except Exception as e:
+        logger.error(f"Error {e}")
+        return "THSP01012025001" # Fallback SKUs
 
 def data_construct_for_gsheet(
         data: Union[list, str], 
@@ -109,5 +113,5 @@ def data_construct_for_gsheet(
         else:
             return []
     except Exception as e:
-        logger.error(f"data_construct_for_gsheet : {e}")
+        logger.error(f"Error : {e}")
         return []

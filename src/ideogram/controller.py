@@ -124,14 +124,14 @@ def controller() -> None:
                         )
 
                 except StopIteration as e:
-                    logger.info(f"No more data to scrape : {str(e)}")
+                    logger.info(f"No more data to scrape : {e}")
                     break
                 except Exception as e:
-                    logger.error(f"Error in controller: Error while getting data to scrape: {str(e)}")
+                    logger.error(f"Error while getting data to scrape: {e}")
                     break
 
     except Exception as e:
-        logger.error(f"Error in controller: {str(e)}")
+        logger.error(f"Error {e}")
     finally:
         close_gemlogin_driver(profile_id=profile_1)
         close_gemlogin_driver(profile_id=profile_2)

@@ -16,8 +16,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 
-from src.assets import update_cols_ideogram, update_cols_etsy
-from src.utils.gg_utils import download_media
+
 from src.utils.utils import download_directly_with_selenium
 
 from src.logger import setup_logger

@@ -14,13 +14,11 @@ from selenium.common.exceptions import NoSuchElementException, TimeoutException,
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-from typing import Dict, List, Optional, Any
-from src.assets import update_cols_etsy
+from typing import Dict, List, Optional
 from src.logger import setup_logger
-from src.open_driver import open_gemlogin_driver, close_gemlogin_driver
-from src.GSheetWriteRead import GSheetWrite
-from src.settings import ETSY_URL, WAIT_TIME, DATA_DOWNLOAD, LOG_DIR
-from src.utils.utils import sku_generator, data_construct_for_gsheet
+from src.open_driver import open_gemlogin_driver
+from src.settings import WAIT_TIME, LOG_DIR
+from src.utils.utils import sku_generator
 
 
 os.makedirs(f"{LOG_DIR}/etsy_logs", exist_ok=True)
