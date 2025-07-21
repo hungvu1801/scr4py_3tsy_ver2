@@ -182,9 +182,9 @@ def controller_main() -> None:
                         executor.submit(controller_thread, drivers_pool, global_lock, row)
 
             except Exception as e:
-                logger.error(f"Error in controller main {e}")
+                logger.error(f"Error {e}")
     except Exception as e:
-        logger.error(f"Error in controller main {e}")
+        logger.error(f"Error {e}")
     finally:
         logger.info(f"Closing all drivers...")
         for _, profile in drivers_pool:

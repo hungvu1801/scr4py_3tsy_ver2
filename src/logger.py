@@ -56,7 +56,7 @@ def setup_logger(name="MyLogger", log_dir="logs"):
 
     # Create formatters and add it to handlers
     log_format = logging.Formatter(
-        '%(asctime)s - %(levelname)s - [%(threadName)s] - %(name)s - %(message)s'
+        '%(asctime)s - %(levelname)s - [%(threadName)s] - %(funcName)s - %(name)s - %(message)s'
     )
     general_handler.setFormatter(log_format)
     error_handler.setFormatter(log_format)
