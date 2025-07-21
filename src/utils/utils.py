@@ -102,6 +102,8 @@ def sku_generator(last_sku: str) -> str:
                 next_order_num = 1
         if next_order_num < 999:
             next_sku = f"{prefix}{date_today}{next_order_num:03d}"
+        else:
+            next_sku = f"{prefix}{date_today}{next_order_num}"
         return next_sku
     except Exception as e:
         logger.error(f"Error {e}")
