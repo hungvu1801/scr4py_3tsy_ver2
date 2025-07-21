@@ -162,7 +162,7 @@ def generator_items(df) -> Generator[Dict[str, Any], None, None]:
 
             yield item_dict
         except Exception as e:
-            logger.error(f"Error in generator_items: {e}. \nItem: {item.get("ID", "Unknown")}")
+            logger.error(f"Error in generator_items: {e}. \nItem: {item.get('ID', 'Unknown')}")
             continue
     # return item_dict
 
