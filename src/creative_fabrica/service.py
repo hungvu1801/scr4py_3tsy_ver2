@@ -33,7 +33,8 @@ class UploadFile:
             self.upload_zip,
             self.check_boxes,
             self.check_upload_status,
-            self.click_submit
+            self.click_submit,
+            self.check_upload_completed
         ]
         self.url = f"{BASE_URL}{UPLOAD_SUFFIX}"
 
@@ -215,4 +216,12 @@ class UploadFile:
         logger.error(f"Upload status check timed out after {timeout} seconds")
         return 0
     
-
+    @selenium_exception_handler
+    def check_upload_completed(self, timeout:int = 300) -> int:
+        logger.info("check_upload_completed")
+        start_time = time.time()
+        while time.time() - start_time < timeout:
+            if self.driver.current_url == SUCCESS_URL:
+                return 1
+            time.sleep(5)
+        return 0
