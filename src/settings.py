@@ -19,3 +19,5 @@ SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 DEFINED_HEADER_IN_ONGOING = {
     "A": ""
 }
+
+CREATIVE_DATA_DIR = "data"

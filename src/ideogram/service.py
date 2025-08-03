@@ -26,7 +26,6 @@ from src.settings import IDEOGRAM_URL, LOG_DIR, IMAGE_DOWNLOAD
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 load_dotenv()
 
-os.makedirs(f"{LOG_DIR}/ideogram_logs", exist_ok=True)
 
 logger = setup_logger(name="IdeogramLoggerService", log_dir=f"{LOG_DIR}/ideogram_logs")
 

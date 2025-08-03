@@ -1,20 +1,23 @@
 import base64
 from datetime import datetime
 import os
+from functools import wraps
 import pandas as pd
 import re
 import tkinter as tk
 from tkinter.filedialog import askopenfilename
 import time
-from typing import List, Union, Optional, Tuple, Generator, Dict, Any
-
+from typing import List, Union, Optional, Generator, Dict, Any
 
 
 from src.logger import setup_logger
 from src.settings import LOG_DIR
+from src.creative_fabrica.elems import CreateFabricaItems
 
 os.makedirs(f"{LOG_DIR}/utils_logs", exist_ok=True)
 logger = setup_logger(name="UtilsLogger", log_dir=f"{LOG_DIR}/utils_logs")
+
+upload_dir = os.path.join(os.getcwd(), "data")
 
 def download_directly_with_selenium(driver, url, save_path):
     try:
@@ -124,23 +127,27 @@ def data_construct_for_gsheet(
         return []
 
 
-def get_imgs_and_zip(data_directory) -> Tuple[List[str], Union[str, int]]:
+def get_imgs_and_zip(data_directory) -> Union[Dict[str, list], None]:
     try:
-        list_images = list()
+        files = {
+            "img_files": [],
+            "zip_file": []
+        }
         for f in os.listdir(data_directory):
-            _, extension = os.path.splitext(f)
-            if extension in [".jpg", ".png", ".jpeg"]:
-                list_images.append(f)
+            _, ext = os.path.splitext(f)
+            f = os.path.join(data_directory, f)
+            if ext in [".jpg", ".png", ".jpeg"]:
+                files["img_files"].append(f)
             else:
-                zip_file = f
-        list_images.sort()
-        return list_images, zip_file
+                files["zip_file"].append(f)
+        files["img_files"].sort()
+        return files
     except Exception as err:
         logger.error(f'Error in get_imgs_and_zip {err}')
-        return [], "Error"
+        return None
     
 def generator_items(df) -> Generator[Dict[str, Any], None, None]:
-    upload_dir = os.path.join(os.getcwd(), "data", "upload_data")
+    
     for _, item in df.iterrows():
         try:
             item_dict: Dict[str, Any] = {}
@@ -149,20 +156,25 @@ def generator_items(df) -> Generator[Dict[str, Any], None, None]:
             item_dict["ID"] = item.loc["ID"]
             item_dict["title"] = item.loc["title"]
             item_dict["description"] = item.loc["description"]
-            item_dict["price"] = item.loc["price"]
+            item_dict["price"] = str(item.loc["price"])
             item_dict["category"] = item.loc["category"]
             item_dict["tag"] = item.loc["tag"]
             
-            item_dict["item_dir"] = item_dir
-            list_images, zip_file = get_imgs_and_zip(item_dir)
-
+            # item_dict["item_dir"] = item_dir
+            files = get_imgs_and_zip(item_dir)
+            if not files:
+                logger.error(f"No images or zip file found for item {item.get('ID', 'Unknown')}")
+                continue
+            img_files: List[str] = files.get("img_files")
+            zip_file: str = files.get("zip_file")[0]
             item_dict["zip_file"] = zip_file
-            count_img = 1
-            for img in list_images:
-                item_dict[f"img_file_{count_img}"] = img
-                count_img += 1
+            item_dict["img_files"] = img_files
 
-            yield item_dict
+            # count_img = 1
+            # for img in list_images:
+            #     count_img += 1
+            item = CreateFabricaItems(**item_dict)
+            yield item
         except Exception as e:
             logger.error(f"Error in generator_items: {e}. \nItem: {item.get('ID', 'Unknown')}")
             continue
@@ -179,3 +191,4 @@ def prompt_open_file() -> pd.DataFrame:
         return df
     except Exception as e:
         logger.error(f"Error in prompt_open_file {e}")
+        return df
