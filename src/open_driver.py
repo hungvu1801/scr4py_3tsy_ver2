@@ -7,13 +7,14 @@ from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 
+from src.utils.load_env import *
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
 def open_gemlogin_driver(profile_id: str) -> webdriver.Chrome:
-    BASE_URL = os.getenv("BASE_URL", "http://localhost:1010")
+
     response = requests.get(f"{BASE_URL}/api/profiles/start/{profile_id}", timeout=10)
     response.raise_for_status()
 
