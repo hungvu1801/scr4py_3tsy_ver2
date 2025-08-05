@@ -56,7 +56,6 @@ def controller(profile_id) -> None:
             logger.info("All items processed successfully.")
         except Exception as e:
             logger.error(f"Error {e}")
-            input()
     except KeyboardInterrupt:
         logger.info("Keyboard interrupt detected. Exiting gracefully.")
     finally:
