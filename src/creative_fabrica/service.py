@@ -46,7 +46,7 @@ class UploadFile:
         logger.info("get_sites")
         self.driver.get(self.url)
         self.driver.implicitly_wait(10)
-        WebDriverWait(self.driver, 10).until(
+        WebDriverWait(self.driver, 50).until(
             EC.presence_of_element_located(
                 (By.XPATH, CreateFabricaElems.PAGE_TITLE)))
         return 1
@@ -72,6 +72,8 @@ class UploadFile:
             except Exception as e:
                 print(e)
                 self.driver.refresh()
+                print("Waiting for product name")
+                logger.info("Waiting for product name")
                 time.sleep(5)
         scroll_to_elem(self.driver, product_name)
         product_name.click()
@@ -90,6 +92,7 @@ class UploadFile:
                     break
             except Exception as e:
                 print(e)
+                print("Waiting for category")
                 time.sleep(5)
         
         category.click()
@@ -211,14 +214,33 @@ class UploadFile:
     @selenium_exception_handler
     def click_submit(self) -> int:
         logger.info("click_submit")
-        time.sleep(1)
-        submit = WebDriverWait(self.driver, 30).until(
-            EC.presence_of_element_located(
-                (By.XPATH, CreateFabricaElems.SUBMIT)))
+        time.sleep(5)
+        while True:
+            try:
+                submit = WebDriverWait(self.driver, 30).until(
+                    EC.presence_of_element_located(
+                        (By.XPATH, CreateFabricaElems.SUBMIT)))
+                if submit:
+                    break
+            except Exception as e:
+                print(e)
+                time.sleep(5)
         scroll_to_elem(self.driver, submit)
-        time.sleep(0.5)
-        submit.click()
         time.sleep(1)
+        while True:
+            try:
+                submit.click()
+                time.sleep(1.5)
+
+                submit = WebDriverWait(self.driver, 10).until(
+                    EC.presence_of_element_located(
+                        (By.XPATH, CreateFabricaElems.SUBMIT)))
+                if submit:
+                    continue
+                else:
+                    break
+            except Exception:
+                break
         return 1
     
     @selenium_exception_handler
