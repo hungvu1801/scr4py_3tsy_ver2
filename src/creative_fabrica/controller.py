@@ -30,13 +30,13 @@ os.makedirs(f"{CREATIVE_DATA_DIR}", exist_ok=True)
 logger = setup_logger(name="CreativeFabricaLog", log_dir=f"{LOG_DIR}/cre_fab_logs")
 
 
-def controller() -> None:
+def controller(profile_id) -> None:
     """
     This function serves as a placeholder for the controller logic.
     It currently does not perform any operations.
     """
     try:
-        driver = open_gemlogin_driver(profile_id=PROFILE_CRE)
+        driver = open_gemlogin_driver(profile_id=profile_id)
         pipeline = UploadFile(driver=driver)
         if not driver:
             logger.error("Failed to open driver.")
