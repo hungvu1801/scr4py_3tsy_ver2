@@ -60,8 +60,8 @@ class UploadFile:
     @selenium_exception_handler
     def write_product_name(self) -> int:
         logger.info("write_product_name")
-        time.sleep(1)
-        product_name = WebDriverWait(self.driver, 10).until(
+        time.sleep(5)
+        product_name = WebDriverWait(self.driver, 60).until(
             EC.presence_of_element_located(
                 (By.XPATH, CreateFabricaElems.PRODUCT)))
         scroll_to_elem(self.driver, product_name)
@@ -72,13 +72,13 @@ class UploadFile:
     @selenium_exception_handler
     def write_category(self) -> int:
         logger.info("write_category")
-        category = WebDriverWait(self.driver, 10).until(
+        category = WebDriverWait(self.driver, 30).until(
             EC.presence_of_element_located(
                 (By.XPATH, CreateFabricaElems.CATEGORY)))
         category.click()
         
         time.sleep(1)
-        category_input = WebDriverWait(self.driver, 10).until(
+        category_input = WebDriverWait(self.driver, 30).until(
             EC.presence_of_element_located(
                 (By.XPATH, CreateFabricaElems.CATEGORY_INPUT)))
         category_input.click()
@@ -90,7 +90,7 @@ class UploadFile:
     def write_price(self) -> int:
         logger.info("write_price")
         time.sleep(1)
-        price = WebDriverWait(self.driver, 10).until(
+        price = WebDriverWait(self.driver, 30).until(
             EC.presence_of_element_located(
                 (By.XPATH, CreateFabricaElems.PRICE)))
         scroll_to_elem(self.driver, price)
@@ -103,7 +103,7 @@ class UploadFile:
     def write_description(self) -> int:
         logger.info("write_description")
         time.sleep(1)
-        description = WebDriverWait(self.driver, 10).until(
+        description = WebDriverWait(self.driver, 30).until(
             EC.presence_of_element_located(
                 (By.XPATH, CreateFabricaElems.DESCRIPTION)))
         scroll_to_elem(self.driver, description)
@@ -129,12 +129,12 @@ class UploadFile:
     def upload_imgs(self) -> int:
         logger.info("upload_imgs")
         time.sleep(1)
-        upload_img = WebDriverWait(self.driver, 10).until(
+        upload_img = WebDriverWait(self.driver, 30).until(
             EC.presence_of_element_located(
                 (By.XPATH, CreateFabricaElems.UPLOAD_PRODUCT_IMGS)))
         scroll_to_elem(self.driver, upload_img)
         for img in self.current_item.img_files:
-            upload_img_input = WebDriverWait(self.driver, 10).until(
+            upload_img_input = WebDriverWait(self.driver, 30).until(
                 EC.presence_of_element_located(
                     (By.XPATH, CreateFabricaElems.UPLOAD_PRODUCT_IMGS_INPUT)))
             time.sleep(1.5)
@@ -146,10 +146,10 @@ class UploadFile:
     def upload_zip(self) -> int:
         logger.info("upload_zip")
         time.sleep(1)
-        upload_zip = WebDriverWait(self.driver, 10).until(
+        upload_zip = WebDriverWait(self.driver, 30).until(
             EC.presence_of_element_located(
                 (By.XPATH, CreateFabricaElems.UPLOAD_PRODUCT_FILE)))
-        upload_zip_input = WebDriverWait(self.driver, 10).until(
+        upload_zip_input = WebDriverWait(self.driver, 30).until(
             EC.presence_of_element_located(
                 (By.XPATH, CreateFabricaElems.UPLOAD_PRODUCT_FILE_INPUT)))
         scroll_to_elem(self.driver, upload_zip)
@@ -161,21 +161,21 @@ class UploadFile:
     def check_boxes(self) -> int:
         logger.info("check_boxes")
         time.sleep(1)
-        freebie_box = WebDriverWait(self.driver, 10).until(
+        freebie_box = WebDriverWait(self.driver, 30).until(
             EC.presence_of_element_located(
                 (By.XPATH, CreateFabricaElems.CHECKBOX_FREEBIE)))
         scroll_to_elem(self.driver, freebie_box)
         time.sleep(0.5)
         freebie_box.click()
         
-        deal_box = WebDriverWait(self.driver, 10).until(
+        deal_box = WebDriverWait(self.driver, 30).until(
             EC.presence_of_element_located(
                 (By.XPATH, CreateFabricaElems.CHECKBOX_DEALS)))
         scroll_to_elem(self.driver, deal_box)
         time.sleep(0.5)
         deal_box.click()
         
-        term_box = WebDriverWait(self.driver, 10).until(
+        term_box = WebDriverWait(self.driver, 30).until(
             EC.presence_of_element_located(
                 (By.XPATH, CreateFabricaElems.CHECKBOX_TERMS)))
         scroll_to_elem(self.driver, term_box)
@@ -187,7 +187,7 @@ class UploadFile:
     def click_submit(self) -> int:
         logger.info("click_submit")
         time.sleep(1)
-        submit = WebDriverWait(self.driver, 10).until(
+        submit = WebDriverWait(self.driver, 30).until(
             EC.presence_of_element_located(
                 (By.XPATH, CreateFabricaElems.SUBMIT)))
         scroll_to_elem(self.driver, submit)
@@ -203,7 +203,7 @@ class UploadFile:
         start_time = time.time()
         successful_uploads = 0
         while time.time() - start_time < timeout:
-            statuses = WebDriverWait(self.driver, 10).until(
+            statuses = WebDriverWait(self.driver, 30).until(
                 EC.presence_of_all_elements_located(
                     (By.XPATH, CreateFabricaElems.UPLOAD_ITEMS_STATUS)))
             for status in statuses:
