@@ -47,13 +47,18 @@ def controller(profile_id) -> None:
             logger.error("DF Empty.. Exiting..")
             return
         item_gen = utils.generator_items(df)
-        while True:
-            item = next(item_gen)
-            pipeline.set_current_item(item)
-            pipeline.execute()
-    except Exception as e:
-        logger.error(f"Error {e}")
-        input()
+        try:
+            while True:
+                item = next(item_gen)
+                pipeline.set_current_item(item)
+                pipeline.execute()
+        except StopIteration:
+            logger.info("All items processed successfully.")
+        except Exception as e:
+            logger.error(f"Error {e}")
+            input()
+    except KeyboardInterrupt:
+        logger.info("Keyboard interrupt detected. Exiting gracefully.")
     finally:
         if driver:
             close_gemlogin_driver(driver)

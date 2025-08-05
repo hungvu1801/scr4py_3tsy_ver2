@@ -148,8 +148,19 @@ def get_imgs_and_zip(data_directory) -> Union[Dict[str, list], None]:
     
 def generator_items(df) -> Generator[Dict[str, Any], None, None]:
     
-    for _, item in df.iterrows():
+    total_items = len(df)
+    processed_items = 0
+    skipped_items = 0
+    
+    logger.info(f"Starting to process {total_items} items from DataFrame")
+    
+    for index, item in df.iterrows():
+        processed_items += 1
+        item_id = item.get('ID', f'Row_{index}')
+        
         try:
+            logger.info(f"Processing item {processed_items}/{total_items}: {item_id}")
+            
             item_dict: Dict[str, Any] = {}
             item_dir = os.path.join(upload_dir, item.loc["ID"])
 
@@ -163,8 +174,10 @@ def generator_items(df) -> Generator[Dict[str, Any], None, None]:
             # item_dict["item_dir"] = item_dir
             files = get_imgs_and_zip(item_dir)
             if not files:
-                logger.error(f"No images or zip file found for item {item.get('ID', 'Unknown')}")
+                logger.error(f"No images or zip file found for item {item_id}")
+                skipped_items += 1
                 continue
+                
             img_files: List[str] = files.get("img_files")
             zip_file: str = files.get("zip_file")[0]
             item_dict["zip_file"] = zip_file
@@ -174,10 +187,15 @@ def generator_items(df) -> Generator[Dict[str, Any], None, None]:
             # for img in list_images:
             #     count_img += 1
             item = CreateFabricaItems(**item_dict)
+            logger.info(f"Successfully prepared item {item_id} for processing")
             yield item
+            
         except Exception as e:
-            logger.error(f"Error in generator_items: {e}. \nItem: {item.get('ID', 'Unknown')}")
+            logger.error(f"Error in generator_items: {e}. \nItem: {item_id}")
+            skipped_items += 1
             continue
+    
+    logger.info(f"Generator completed. Processed: {processed_items}, Skipped: {skipped_items}, Yielded: {processed_items - skipped_items}")
     # return item_dict
 
 def prompt_open_file() -> pd.DataFrame:
