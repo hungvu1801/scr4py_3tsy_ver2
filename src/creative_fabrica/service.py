@@ -61,9 +61,17 @@ class UploadFile:
     def write_product_name(self) -> int:
         logger.info("write_product_name")
         time.sleep(5)
-        product_name = WebDriverWait(self.driver, 60).until(
-            EC.presence_of_element_located(
-                (By.XPATH, CreateFabricaElems.PRODUCT)))
+        while True:
+            try:
+                product_name = WebDriverWait(self.driver, 60).until(
+                    EC.presence_of_element_located(
+                        (By.XPATH, CreateFabricaElems.PRODUCT)))
+                if product_name:
+                    break
+            except Exception as e:
+                print(e)
+                self.driver.refresh()
+                time.sleep(5)
         scroll_to_elem(self.driver, product_name)
         product_name.click()
         write_with_delay(element=product_name, message=self.current_item.title, interval=0.01)
@@ -72,15 +80,31 @@ class UploadFile:
     @selenium_exception_handler
     def write_category(self) -> int:
         logger.info("write_category")
-        category = WebDriverWait(self.driver, 30).until(
-            EC.presence_of_element_located(
-                (By.XPATH, CreateFabricaElems.CATEGORY)))
+        while True:
+            try:
+                category = WebDriverWait(self.driver, 30).until(
+                    EC.presence_of_element_located(
+                        (By.XPATH, CreateFabricaElems.CATEGORY)))
+                if category:
+                    break
+            except Exception as e:
+                print(e)
+                time.sleep(5)
+        
         category.click()
         
         time.sleep(1)
-        category_input = WebDriverWait(self.driver, 30).until(
-            EC.presence_of_element_located(
-                (By.XPATH, CreateFabricaElems.CATEGORY_INPUT)))
+        while True:
+            try:
+                category_input = WebDriverWait(self.driver, 30).until(
+                    EC.presence_of_element_located(
+                        (By.XPATH, CreateFabricaElems.CATEGORY_INPUT)))
+                if category_input:
+                    break
+            except Exception as e:
+                print(e)
+                time.sleep(5)
+        
         category_input.click()
         write_with_delay(element=category_input, message=self.current_item.category, interval=0.01)
         category_input.send_keys(Keys.ENTER)

@@ -50,8 +50,10 @@ def controller(profile_id) -> None:
         try:
             while True:
                 item = next(item_gen)
+                print(f"processing item: {item.ID}")
                 pipeline.set_current_item(item)
                 pipeline.execute()
+                print(f"Done processing item: {item.ID}")
         except StopIteration:
             logger.info("All items processed successfully.")
         except Exception as e:
