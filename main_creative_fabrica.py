@@ -17,4 +17,5 @@ if __name__ == "__main__":
         help="Specify which profile(s) to run (e.g., --profile 1 2 3 4)"
     )
     args = parser.parse_args()
-    controller(profile_id=args.profile)
+
+    controller(profile_id=args.profile[0])

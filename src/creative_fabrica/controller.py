@@ -35,8 +35,8 @@ def controller(profile_id) -> None:
     This function serves as a placeholder for the controller logic.
     It currently does not perform any operations.
     """
+    driver = open_gemlogin_driver(profile_id=profile_id)
     try:
-        driver = open_gemlogin_driver(profile_id=profile_id)
         pipeline = UploadFile(driver=driver)
         if not driver:
             logger.error("Failed to open driver.")
@@ -47,12 +47,19 @@ def controller(profile_id) -> None:
             logger.error("DF Empty.. Exiting..")
             return
         item_gen = utils.generator_items(df)
-        while True:
-            item = next(item_gen)
-            pipeline.set_current_item(item)
-            pipeline.execute()
-    except Exception as e:
-        logger.error(f"Error {e}")
+        try:
+            while True:
+                item = next(item_gen)
+                print(f"processing item: {item.ID}")
+                pipeline.set_current_item(item)
+                pipeline.execute()
+                print(f"Done processing item: {item.ID}")
+        except StopIteration:
+            logger.info("All items processed successfully.")
+        except Exception as e:
+            logger.error(f"Error {e}")
+    except KeyboardInterrupt:
+        logger.info("Keyboard interrupt detected. Exiting gracefully.")
     finally:
         if driver:
             close_gemlogin_driver(driver)

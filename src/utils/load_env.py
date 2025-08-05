@@ -10,6 +10,8 @@ spreadsheetId = os.getenv("SPREADSHEET_ID")
 
 PROFILE_CRE = int(os.getenv("PROFILE_ID_5", "5"))
 
+BASE_URL = os.getenv("BASE_URL")
+
 # SHOP_NAME
 # PROFILE_ID
 # NUMPAGE
