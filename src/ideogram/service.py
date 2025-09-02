@@ -71,22 +71,20 @@ def wait_for_generation(driver: webdriver.Chrome) -> bool:
     logger.info("Waiting for image generation to complete.")
     wait_time_count = 0
     attempt = 0
+    try:
+        # wait for policy
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located(
+                (By.XPATH, 
+                IdeoElems.policy_elem)))
+        return False
+    except TimeoutException:
+        logger.info(f"There are not policy.")
     while True:
         try:
-            try:
-                # wait for policy
-                WebDriverWait(driver, 10).until(
-                    EC.presence_of_element_located(
-                        (By.XPATH, 
-                        IdeoElems.policy_elem)))
-                return False
-            except TimeoutException:
-                logger.info(f"There are not policy.")
-
             p_elem = WebDriverWait(driver, 10).until(
                 EC.presence_of_element_located(
-                    (By.XPATH, 
-                    IdeoElems.generating_notifier)))
+                    (By.XPATH, IdeoElems.generating_notifier)))
             
             while p_elem.text != "Generation complete":
                 time.sleep(5)
@@ -94,8 +92,7 @@ def wait_for_generation(driver: webdriver.Chrome) -> bool:
                 logger.info(f"Waiting for image generation : {wait_time_count} seconds")
                 p_elem = WebDriverWait(driver, 10).until(
                     EC.presence_of_element_located(
-                        (By.XPATH, 
-                        IdeoElems.generating_notifier)))
+                        (By.XPATH, IdeoElems.generating_notifier)))
             return True
         except TimeoutException as e:
             logger.error(f"Timeout while waiting for the image generation to complete. {e}")
@@ -323,21 +320,23 @@ def settings_num_of_imgs(driver: webdriver.Chrome, image_num: str = "2") -> None
 
         time.sleep(1)
     except Exception as e:
-        logger.error(f"Error while checking or setting ratio: {str(e)}")
+        logger.error(f"Error while checking or setting ratio: {e}")
 
 def check_design(driver: webdriver.Chrome) -> None:
     logger.info("Checking design settings for Ideogram.")
     try:
         # Check if the design is set
         design = os.environ.get("DESIGN", "Design")
-        if not design:
-            logger.error("Design is not set in the environment variables.")
+        design_elem = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located(
+                (By.XPATH, IdeoElems.design_elem)))
+        if design_elem.text == design:
+            logger.info("Design is already set.")
             return
         else:
             settings_design(driver, design)
-            logger.info("Design is already set.")
     except Exception as e:
-        logger.error(f"Error while checking or setting design: {str(e)}")
+        logger.error(f"Error while checking or setting design: {e}")
 
 def settings_design(driver: webdriver.Chrome, design: str) -> None:
     logger.info(f"Setting design to {design} for Ideogram.")
@@ -359,5 +358,5 @@ def settings_design(driver: webdriver.Chrome, design: str) -> None:
             By.XPATH, IdeoElems.design_elem).click()
         time.sleep(1)
     except Exception as e:
-        logger.error(f"Error while checking or setting design: {str(e)}")
+        logger.error(f"Error while checking or setting design: {e}")
 
