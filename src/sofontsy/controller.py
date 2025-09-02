@@ -1,8 +1,10 @@
+
 import os
 import sys
 
+
 from src.logger import setup_logger
-from src.settings import CREATIVE_DATA_DIR, LOG_DIR
+from src.settings import SOFONTSY_DATA_DIR, LOG_DIR
 from src.utils import utils
 from src.open_driver import open_gemlogin_driver, close_gemlogin_driver
 from src.utils.load_env import *
@@ -12,10 +14,10 @@ from .service import UploadFile
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-os.makedirs(f"{LOG_DIR}/cre_fab_logs", exist_ok=True)
-os.makedirs(f"{CREATIVE_DATA_DIR}", exist_ok=True)
+os.makedirs(f"{LOG_DIR}/sofontsy_logs", exist_ok=True)
+os.makedirs(f"{SOFONTSY_DATA_DIR}", exist_ok=True)
 
-logger = setup_logger(name="CreativeFabricaLog", log_dir=f"{LOG_DIR}/cre_fab_logs")
+logger = setup_logger(name="SoFontsyLog", log_dir=f"{LOG_DIR}/sofontsy_logs")
 
 
 def controller(profile_id) -> None:

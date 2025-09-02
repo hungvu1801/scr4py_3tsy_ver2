@@ -13,10 +13,10 @@ from src.logger import setup_logger
 from src.settings import LOG_DIR
 from src.utils.action_utils import write_with_delay, scroll_to_elem
 from src.utils.decorators import selenium_exception_handler
-from .elems import CreateFabricaElems, CreateFabricaItems
+from .elems import SofontsyElems, SofontsyItems
 
 
-logger = setup_logger(name="CreativeFabricaLog", log_dir=f"{LOG_DIR}/cre_fab_logs")
+logger = setup_logger(name="CreativeFabricaLog", log_dir=f"{LOG_DIR}/sofontsy_logs")
 
 class UploadFile:
     def __init__(self, driver: webdriver.Chrome):

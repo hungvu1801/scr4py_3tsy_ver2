@@ -20,4 +20,6 @@ DEFINED_HEADER_IN_ONGOING = {
     "A": ""
 }
 
-CREATIVE_DATA_DIR = "data"
+CREATIVE_DATA_DIR = "data/creative_fabrica"
+
+SOFONTSY_DATA_DIR = "data/sofontsy"
