@@ -98,3 +98,11 @@ update_cols_ideogram = {
     "C": "img_url", 
     "D": "product_url"
     }
+
+design_dict = {
+    "Auto": 1,
+    "Random": 2,
+    "General": 3,
+    "Realistic": 4,
+    "Design": 5,
+    }

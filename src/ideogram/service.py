@@ -1,15 +1,10 @@
 from dotenv import load_dotenv
-
 import os
-
-
 import re
-
 import sys
 import time
 
 from selenium import webdriver
-from selenium.webdriver.common.action_chains import ActionChains
 from selenium.common.exceptions import TimeoutException, StaleElementReferenceException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -18,19 +13,18 @@ from selenium.webdriver.common.by import By
 
 
 from src.utils.utils import download_directly_with_selenium
-
+from src.ideogram.IdeoElems import IdeoElems
 from src.logger import setup_logger
 from src.settings import IDEOGRAM_URL, LOG_DIR, IMAGE_DOWNLOAD
+from src.assets import design_dict
 
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 load_dotenv()
 
-
 logger = setup_logger(name="IdeogramLoggerService", log_dir=f"{LOG_DIR}/ideogram_logs")
 
-
-def check_default_settings(driver: webdriver.Chrome):
+def check_default_settings(driver: webdriver.Chrome) -> None:
     logger.info("Checking default settings for Ideogram.")
     check_ratio(driver)
     check_num_of_imgs(driver)
@@ -47,7 +41,7 @@ def browse_site(driver:webdriver.Chrome) -> None:
         WebDriverWait(driver, 30).until(
             EC.presence_of_element_located(
                 (By.XPATH, 
-                "//textarea[@placeholder='Describe what you want to see']"))
+                 IdeoElems.main_text_box))
                 )
         time.sleep(5)
     except TimeoutException as e:
@@ -73,16 +67,26 @@ def get_data_to_scrape(data):
                 yield (idx, val)
     return None
 
-def wait_for_generation(driver:webdriver.Chrome) -> bool:
+def wait_for_generation(driver: webdriver.Chrome) -> bool:
     logger.info("Waiting for image generation to complete.")
     wait_time_count = 0
     attempt = 0
     while True:
         try:
+            try:
+                # wait for policy
+                WebDriverWait(driver, 10).until(
+                    EC.presence_of_element_located(
+                        (By.XPATH, 
+                        IdeoElems.policy_elem)))
+                return False
+            except TimeoutException:
+                logger.info(f"There are not policy.")
+
             p_elem = WebDriverWait(driver, 10).until(
                 EC.presence_of_element_located(
                     (By.XPATH, 
-                    "//p[@class='MuiTypography-root MuiTypography-body1 css-1ce06iw']")))
+                    IdeoElems.generating_notifier)))
             
             while p_elem.text != "Generation complete":
                 time.sleep(5)
@@ -91,7 +95,7 @@ def wait_for_generation(driver:webdriver.Chrome) -> bool:
                 p_elem = WebDriverWait(driver, 10).until(
                     EC.presence_of_element_located(
                         (By.XPATH, 
-                        "//p[@class='MuiTypography-root MuiTypography-body1 css-1ce06iw']")))
+                        IdeoElems.generating_notifier)))
             return True
         except TimeoutException as e:
             logger.error(f"Timeout while waiting for the image generation to complete. {e}")
@@ -107,17 +111,17 @@ def wait_for_generation(driver:webdriver.Chrome) -> bool:
             logger.error(f"Error while waiting for the image generation to complete. {e}\nAttempt = {attempt}")
             time.sleep(5)
 
-def get_image_urls(driver:webdriver.Chrome):
+def get_image_urls(driver: webdriver.Chrome):
     logger.info("Getting image URLs from Ideogram.")
     try:
         img_elems = WebDriverWait(driver, 30).until(
-                EC.presence_of_all_elements_located(
-                    (By.XPATH, 
-                     "//div[contains(@class, 'MuiGrid-root MuiGrid-container MuiGrid-spacing-xs-1')]/div")))
+            EC.presence_of_all_elements_located(
+                (By.XPATH, IdeoElems.img_elems)))
 
     except TimeoutException as e:
         logger.error(f"Timeout while waiting for image elements: {str(e)}")
         return None
+    
     for img_elem in img_elems:
         try:
             time.sleep(3)
@@ -141,13 +145,13 @@ def generate_image(
     while True:
         try:
             text_area = driver_gen.find_element(
-                By.XPATH, "//textarea[@placeholder='Describe what you want to see']"
+                By.XPATH, IdeoElems.main_text_box
                 )
             text_area.send_keys(Keys.CONTROL, 'a')
             text_area.send_keys(Keys.DELETE)
             time.sleep(1)
             text_area.send_keys(prompt)
-            time.sleep(1)
+            time.sleep(3)
             break
         except Exception as e:
             logger.error(f"Error in locating Describe what you want to see: {str(e)}")
@@ -158,17 +162,18 @@ def generate_image(
         try:
             generate_button = driver_gen.find_element(
                 By.XPATH, 
-                "//button/span[contains(text(), 'Generate')]")
+                IdeoElems.generate_button)
             generate_button.click()
             time.sleep(1)
             break
         except Exception as e:
             logger.error(f"Error in locating Generation button: {str(e)}")
+            time.sleep(1)
             continue
     
     ## Wait for the image generation to complete
     if not wait_for_generation(driver_gen):
-        logger.error("Image generation failed or timed out.")
+        logger.error("Image generation failed, timed out or policy errors.")
         return 0
     try:
         url_img_generator = get_image_urls(driver_gen)
@@ -196,17 +201,15 @@ def generate_image(
         return 0
     
 
-def check_ratio(driver:webdriver.Chrome) -> None:
+def check_ratio(driver: webdriver.Chrome) -> None:
     logger.info("Checking ratio settings for Ideogram.")
     ratio_checking = os.environ.get("RESOLUTION_SETTINGS")
-    width = int(os.environ.get("WIDTH"))
-    height = int(os.environ.get("HEIGHT"))
+    width = os.environ.get("WIDTH").strip()
+    height = os.environ.get("HEIGHT").strip()
     try:
         ratio_elem = WebDriverWait(driver, 30).until(
-                EC.presence_of_element_located(
-                    (By.XPATH, 
-                    "//div[@class='MuiBox-root css-1dktxqu']/div[3]"))
-                    )
+            EC.presence_of_element_located(
+                (By.XPATH, IdeoElems.ratio_elem)))
     except TimeoutException:
         return None
     ratio_checked = ratio_elem.text
@@ -219,10 +222,8 @@ def check_ratio(driver:webdriver.Chrome) -> None:
     while True:
         try:
             ratio_elem = WebDriverWait(driver, 30).until(
-                    EC.presence_of_element_located(
-                        (By.XPATH, 
-                        "//div[@class='MuiBox-root css-1dktxqu']/div[3]"))
-                        )
+                EC.presence_of_element_located(
+                    (By.XPATH, IdeoElems.ratio_elem)))
         except TimeoutException:
             return None
         ratio_checked = ratio_elem.text
@@ -232,47 +233,47 @@ def check_ratio(driver:webdriver.Chrome) -> None:
         else:
             return None
 
-def settings_ratio(driver:webdriver.Chrome, height: int, width: int) -> None:
+def settings_ratio(driver: webdriver.Chrome, height: str, width: str) -> None:
     logger.info(f"Setting ratio to {height}x{width} for Ideogram.")
     try:
         WebDriverWait(driver, 30).until(
             EC.presence_of_element_located(
-                (By.XPATH, 
-                "//div[@class='MuiBox-root css-1dktxqu']/div[3]"))
-                ).click()
+                (By.XPATH, IdeoElems.ratio_elem))).click()
         # driver.find_element(
         #     By.XPATH, "//div[@class='MuiBox-root css-1dktxqu']/div[3]").click()
         time.sleep(1)
-        # Click custom button
-        WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located(
-                (By.XPATH, 
-                "//div[@class='MuiBox-root css-12lxzkk']/button[2]"))
-                ).click()
-        # driver.find_element(
-        #     By.XPATH, "//div[@class='MuiBox-root css-12lxzkk']/button[2]").click()
-        time.sleep(1)
+
         # input width
-        input_width = driver.find_element(By.XPATH, "//div[@class='MuiBox-root css-125dcud']/div[1]/div[1]//input")
-        
-        input_width.send_keys("delete")
+        input_width = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located(
+                (By.XPATH, IdeoElems.ratio_input_width)))
+        text_len = len(input_width.get_attribute("value"))
+        input_width.send_keys(Keys.END)  # move cursor to end
+        for _ in range(text_len):
+            input_width.send_keys(Keys.BACKSPACE)
+        # input_width.send_keys("delete")
         time.sleep(2)
         input_width.send_keys(width)
 
         # input height
         input_height = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located(
-                (By.XPATH, 
-                "//div[@class='MuiBox-root css-125dcud']/div[1]/div[2]//input"))
-                )
-        actions = ActionChains(driver)
-        actions.double_click(input_height).perform()
-        input_height.send_keys("delete")
+                (By.XPATH, IdeoElems.ratio_input_heigth)))
+                
+        text_len = len(input_height.get_attribute("value"))
+        input_height.send_keys(Keys.END)
+        for _ in range(text_len):
+            input_height.send_keys(Keys.BACKSPACE)
+
         time.sleep(1)
         input_height.send_keys(height)
 
         # Save
-        driver.find_element(By.XPATH, "//div[@class='MuiBox-root css-1ks2d2u']/button[2]").click()
+        time.sleep(1)
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located(
+                (By.XPATH, IdeoElems.ratio_save_btn))).click()
+        
         time.sleep(1)
     except StaleElementReferenceException as e:
         logger.error(f"Error while checking or setting ratio: {str(e)}")
@@ -284,10 +285,13 @@ def settings_ratio(driver:webdriver.Chrome, height: int, width: int) -> None:
 def check_num_of_imgs(driver:webdriver.Chrome) -> None:
     logger.info("Checking number of images settings for Ideogram.")
     image_num = os.environ.get("NUMIMG", "2")
-    text = driver.find_element(
-        By.XPATH, "//div[@class='MuiBox-root css-1dktxqu']/div[5]").text
+
+    text_str = WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located(
+            (By.XPATH, IdeoElems.image_num_elem))).text
+
     try:
-        image_num_checked = re.search(r"(\d+)$", text).group(1)
+        image_num_checked = re.search(r"(\d+)$", text_str).group(1)
     except AttributeError:
         logger.error("Could not find the number of images in the text.")
         return None
@@ -296,24 +300,32 @@ def check_num_of_imgs(driver:webdriver.Chrome) -> None:
     else:
         return None
 
-def settings_num_of_imgs(driver:webdriver.Chrome, image_num:str="1") -> None:
+def settings_num_of_imgs(driver: webdriver.Chrome, image_num: str = "2") -> None:
     logger.info(f"Setting number of images to {image_num} for Ideogram.")
     try:
         # Click on image settings tab
-        driver.find_element(
-            By.XPATH, "//div[@class='MuiBox-root css-1dktxqu']/div[5]").click()
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located(
+                (By.XPATH, IdeoElems.image_num_elem))).click()
+
         time.sleep(1)
         # Click on number of images button
-        driver.find_element(
-            By.XPATH, f"//div[@class='MuiToggleButtonGroup-root css-1mfgcko']/button[{image_num}]").click()
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located(
+                (By.XPATH, IdeoElems.image_num_elem_btn.format(image_num=image_num)))
+                ).click()
+        
         time.sleep(1)
-        driver.find_element(
-            By.XPATH, "//div[@class='MuiBox-root css-1dktxqu']/div[5]").click()
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located(
+                (By.XPATH, IdeoElems.image_num_elem))
+                ).click()
+
         time.sleep(1)
     except Exception as e:
         logger.error(f"Error while checking or setting ratio: {str(e)}")
 
-def check_design(driver:webdriver.Chrome) -> None:
+def check_design(driver: webdriver.Chrome) -> None:
     logger.info("Checking design settings for Ideogram.")
     try:
         # Check if the design is set
@@ -327,27 +339,24 @@ def check_design(driver:webdriver.Chrome) -> None:
     except Exception as e:
         logger.error(f"Error while checking or setting design: {str(e)}")
 
-def settings_design(driver:webdriver.Chrome, design:str) -> None:
+def settings_design(driver: webdriver.Chrome, design: str) -> None:
     logger.info(f"Setting design to {design} for Ideogram.")
     try:
         # Click on design settings tab
-        design_dict = {
-            "Auto": 1,
-            "Random": 2,
-            "General": 3,
-            "Realistic": 4,
-            "Design": 5,
-        }
-
-        driver.find_element(
-            By.XPATH, "//div[@class='MuiBox-root css-1dktxqu']/div[9]").click()
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located(
+                (By.XPATH, IdeoElems.design_elem))).click()
         time.sleep(1)
         # Click on design button
-        driver.find_element(
-            By.XPATH, f"//div[@class='MuiBox-root css-r7ft4d']/div[{design_dict[design]}]").click()
+
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located(
+                (By.XPATH, IdeoElems.design_elem_btn.format(design=design_dict[design])))
+                ).click()
+                
         time.sleep(1)
         driver.find_element(
-            By.XPATH, "//div[@class='MuiBox-root css-1dktxqu']/div[9]").click()
+            By.XPATH, IdeoElems.design_elem).click()
         time.sleep(1)
     except Exception as e:
         logger.error(f"Error while checking or setting design: {str(e)}")

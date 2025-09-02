@@ -48,7 +48,6 @@ def controller() -> None:
     
     gsheet_read = GSheetRead(
         service=service,)
-    
 
     try:
         driver_1 = open_gemlogin_driver(profile_id=profile_1)
@@ -129,7 +128,8 @@ def controller() -> None:
                 except Exception as e:
                     logger.error(f"Error while getting data to scrape: {e}")
                     break
-
+    except KeyboardInterrupt:
+        logger.error(f"KeyboardInterrupt Detected.")
     except Exception as e:
         logger.error(f"Error {e}")
     finally:
