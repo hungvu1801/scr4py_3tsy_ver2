@@ -42,7 +42,7 @@ def browse_site(driver:webdriver.Chrome) -> None:
             EC.presence_of_element_located(
                 (By.XPATH, 
                  IdeoElems.main_text_box))
-                )
+                ).click()
         time.sleep(5)
     except TimeoutException as e:
         logger.error(f"Error while browsing site {IDEOGRAM_URL}: {str(e)}")
