@@ -9,8 +9,7 @@ from src.GSheetWriteRead import GSheetWrite, GSheetRead
 from src.ideogram.service import (
     browse_site, 
     check_default_settings, 
-    generate_image, 
-    get_data_to_scrape,
+    generate_image
     )
 
 from src.open_driver import open_gemlogin_driver, close_gemlogin_driver

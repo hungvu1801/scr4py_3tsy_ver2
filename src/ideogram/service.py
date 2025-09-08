@@ -67,7 +67,7 @@ def get_data_to_scrape(data):
                 yield (idx, val)
     return None
 
-def wait_for_generation(driver: webdriver.Chrome) -> bool:
+def wait_for_generation(driver: webdriver.Chrome) -> int:
     logger.info("Waiting for image generation to complete.")
     wait_time_count = 0
     attempt = 0
@@ -77,7 +77,7 @@ def wait_for_generation(driver: webdriver.Chrome) -> bool:
             EC.presence_of_element_located(
                 (By.XPATH, 
                 IdeoElems.policy_elem)))
-        return False
+        return -1
     except TimeoutException:
         logger.info(f"There are not policy.")
     while True:
@@ -93,7 +93,7 @@ def wait_for_generation(driver: webdriver.Chrome) -> bool:
                 p_elem = WebDriverWait(driver, 10).until(
                     EC.presence_of_element_located(
                         (By.XPATH, IdeoElems.generating_notifier)))
-            return True
+            return 1
         except TimeoutException as e:
             logger.error(f"Timeout while waiting for the image generation to complete. {e}")
             time.sleep(5)
@@ -103,7 +103,7 @@ def wait_for_generation(driver: webdriver.Chrome) -> bool:
         except Exception as e:
             if attempt == 3:
                 logger.error(f"Error while waiting for the image generation to complete. {e} \nEscaping ...")
-                return False
+                return 0
             attempt += 1
             logger.error(f"Error while waiting for the image generation to complete. {e}\nAttempt = {attempt}")
             time.sleep(5)
@@ -169,7 +169,11 @@ def generate_image(
             continue
     
     ## Wait for the image generation to complete
-    if not wait_for_generation(driver_gen):
+    result_wait = wait_for_generation(driver_gen)
+    if result_wait == -1:
+        logger.info("Image generation blocked by policy.")
+        return 1
+    elif result_wait == 0:
         logger.error("Image generation failed, timed out or policy errors.")
         return 0
     try:
