@@ -19,37 +19,41 @@ os.makedirs(f"{SOFONTSY_DATA_DIR}", exist_ok=True)
 
 logger = setup_logger(name="SoFontsyLog", log_dir=f"{LOG_DIR}/sofontsy_logs")
 
-
-def controller(profile_id) -> None:
-    """
-    This function serves as a placeholder for the controller logic.
-    It currently does not perform any operations.
-    """
-    driver = open_gemlogin_driver(profile_id=profile_id)
-    try:
-        pipeline = UploadFile(driver=driver)
-        if not driver:
+class Controller:
+    def __init__(self, profile_id: str):
+        self.profile_id = profile_id
+        self.driver = open_gemlogin_driver(profile_id=profile_id)
+        if not self.driver:
             logger.error("Failed to open driver.")
-            return
+            raise
+        self.pipeline = UploadFile(driver=self.driver)
+        self.df = utils.prompt_open_file()
 
-        df = utils.prompt_open_file()
-        if df.empty:
-            logger.error("DF Empty.. Exiting..")
-            return
-        item_gen = utils.generator_items(df)
+    def controller(self) -> None:
+        """
+        This function serves as a placeholder for the controller logic.
+        It currently does not perform any operations.
+        """
         try:
-            while True:
-                item = next(item_gen)
-                print(f"processing item: {item.ID}")
-                pipeline.set_current_item(item)
-                pipeline.execute()
-                print(f"Done processing item: {item.ID}")
-        except StopIteration:
-            logger.info("All items processed successfully.")
-        except Exception as e:
-            logger.error(f"Error {e}")
-    except KeyboardInterrupt:
-        logger.info("Keyboard interrupt detected. Exiting gracefully.")
-    finally:
-        if driver:
-            close_gemlogin_driver(driver)
+            if self.df.empty:
+                logger.error("DF Empty.. Exiting..")
+                return
+            item_gen = utils.generator_items(self.df)
+            try:
+                while True:
+                    item = next(item_gen)
+                    print(f"processing item: {item.ID}")
+                    self.pipeline.set_current_item(item)
+                    self.pipeline.execute()
+                    print(f"Done processing item: {item.ID}")
+            except StopIteration:
+                logger.info("All items processed successfully.")
+            except Exception as e:
+                logger.error(f"Error {e}")
+        except KeyboardInterrupt:
+            logger.info("Keyboard interrupt detected. Exiting gracefully.")
+            self.close_controller()
+
+    def close_controller(self):
+        if self.driver:
+            close_gemlogin_driver(self.driver)

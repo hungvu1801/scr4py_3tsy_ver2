@@ -2,17 +2,21 @@ from dataclasses import dataclass
 from typing import List
 from .config import *
 class SofontsyElems:
-    PAGE_TITLE: str = ""
-    PRODUCT: str = ""
+    PAGE_TITLE: str = "//h1[@class='Polaris-DisplayText Polaris-DisplayText--sizeLarge']" #Add a New Product
+    PRODUCT: str = "//input[@id='product_title']"
     CATEGORY: str = ""
     CATEGORY_INPUT: str = ""
-    DESCRIPTION: str = ""
-    PRICE: str = ""
-    TAGS: str = ""
+    DESCRIPTION: str = "(//div[@role='textbox'])[1]"
+    PRICE: str = "//input[@id='product_price']"
+    COMPARE_PRICE: str = "//input[@id='product_compare_at_price']"
+    TAGS: str = "//input[@id='tags']"
     UPLOAD_PRODUCT_IMGS: str = ""
-    UPLOAD_PRODUCT_IMGS_INPUT: str = ""
+    UPLOAD_PRODUCT_IMGS_INPUT: str = "//input[@name='product_image[]']"
     UPLOAD_PRODUCT_FILE: str = ""
-    UPLOAD_PRODUCT_FILE_INPUT: str = ""
+    UPLOAD_PRODUCT_FILE_INPUT: str = "//input[@name='product_zip[]']"
+    BARCODE = "//input[@id='product_barcode']"
+    PRODUCT_TYPE = "//select[@name='product_type']"
+    PROD_SHORT_DESCRIPTION: str = "(//div[@role='textbox'])[2]"
     UPLOAD_ITEMS_STATUS: str = ""
     CHECKBOX_FREEBIE: str = ""
     CHECKBOX_DEALS: str = ""

@@ -13,6 +13,7 @@ from src.logger import setup_logger
 from src.settings import LOG_DIR
 from src.utils.action_utils import write_with_delay, scroll_to_elem
 from src.utils.decorators import selenium_exception_handler
+from .config import CREATE_PRODUCT_URL
 from .elems import SofontsyElems, SofontsyItems
 
 
@@ -36,19 +37,19 @@ class UploadFile:
             self.click_submit,
             self.check_upload_completed
         ]
-        self.url = f"{BASE_URL}{UPLOAD_SUFFIX}"
 
-    def set_current_item(self, item: Optional[CreateFabricaItems]):
+
+    def set_current_item(self, item: Optional[SofontsyItems]):
         self.current_item = item
 
     @selenium_exception_handler
     def get_sites(self) -> int:
         logger.info("get_sites")
-        self.driver.get(self.url)
+        self.driver.get(CREATE_PRODUCT_URL)
         self.driver.implicitly_wait(10)
         WebDriverWait(self.driver, 50).until(
             EC.presence_of_element_located(
-                (By.XPATH, CreateFabricaElems.PAGE_TITLE)))
+                (By.XPATH, SofontsyElems.PAGE_TITLE)))
         return 1
     
     def execute(self) -> int:
