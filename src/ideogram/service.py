@@ -243,7 +243,11 @@ def settings_ratio(driver: webdriver.Chrome, height: str, width: str) -> None:
         # driver.find_element(
         #     By.XPATH, "//div[@class='MuiBox-root css-1dktxqu']/div[3]").click()
         time.sleep(1)
-
+        # Click this to activate the input button 
+        WebDriverWait(driver, 30).until(
+            EC.presence_of_element_located(
+                (By.XPATH, IdeoElems.ratio_elem_width_clickable))).click()
+        time.sleep(1)
         # input width
         input_width = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located(
@@ -358,9 +362,9 @@ def settings_design(driver: webdriver.Chrome, design: str) -> None:
                 ).click()
                 
         time.sleep(1)
-        driver.find_element(
-            By.XPATH, IdeoElems.design_elem).click()
-        time.sleep(1)
+        # driver.find_element(
+        #     By.XPATH, IdeoElems.design_elem).click()
+        # time.sleep(1)
     except Exception as e:
         logger.error(f"Error while checking or setting design: {e}")
 

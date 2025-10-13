@@ -101,8 +101,8 @@ update_cols_ideogram = {
 
 design_dict = {
     "Auto": 1,
-    "Random": 2,
-    "General": 3,
-    "Realistic": 4,
-    "Design": 5,
+    # "Random": 2, # Removed
+    "General": 2,
+    "Realistic": 3,
+    "Design": 4,
     }
