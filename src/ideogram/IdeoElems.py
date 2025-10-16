@@ -4,8 +4,8 @@ class IdeoElems:
     generate_button: str = "//button/span[contains(text(), 'Generate')]"
     policy_elem: str = "//p[contains(text(),'meet our content policy')]"
     
-    generating_notifier: str = "//p[@class='MuiTypography-root MuiTypography-body1 css-1ce06iw']"
-    img_elems: str = "//div[contains(@class, 'MuiGrid-root MuiGrid-container MuiGrid-spacing-xs-1')]/div"
+    generating_notifier: str = "//div[@class='MuiBox-root css-18o6q3k']/p"
+    img_elems: str = "//div[contains(@class, 'MuiGrid-root MuiGrid-container css-1yek722')]/div"
 
     ratio_elem: str = "//div[@class='MuiBox-root css-ritwfp']/div[2]"
     ratio_elem_width_clickable: str = "(//p[@class='MuiTypography-root MuiTypography-body1 css-1t1m8m6'])[1]"
