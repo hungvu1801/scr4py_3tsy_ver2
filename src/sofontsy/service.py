@@ -23,8 +23,14 @@ class UploadFile:
     def __init__(self, driver: webdriver.Chrome):
         self.driver = driver
         self.current_item = None
-        self.step = [
-            self.get_sites,
+        self.init_steps = [
+            self.go_to_main_site,
+            self.go_to_account,
+            self.go_to_portal,
+            ]
+        
+        self.upload_steps = [
+            self.click_add_prod,
             self.write_product_name,
             self.write_category,
             self.write_price,
@@ -32,7 +38,7 @@ class UploadFile:
             self.write_tags,
             self.upload_imgs,
             self.upload_zip,
-            self.check_boxes,
+            # self.check_boxes,
             self.check_upload_status,
             self.click_submit,
             self.check_upload_completed
@@ -43,17 +49,52 @@ class UploadFile:
         self.current_item = item
 
     @selenium_exception_handler
-    def get_sites(self) -> int:
-        logger.info("get_sites")
-        self.driver.get(CREATE_PRODUCT_URL)
+    def go_to_main_site(self) -> int:
+        logger.info("go_to_main_site")
+        self.driver.get(BASE_URL)
         self.driver.implicitly_wait(10)
-        WebDriverWait(self.driver, 50).until(
+        time.sleep(1)
+        return 1
+
+    @selenium_exception_handler
+    def go_to_account(self) -> int:
+        logger.info("go_to_account")
+        WebDriverWait(self.driver, 30).until(
             EC.presence_of_element_located(
-                (By.XPATH, SofontsyElems.PAGE_TITLE)))
+                (By.XPATH, SofontsyElems.ACCOUNT_BTN))).click()
+        time.sleep(1)
         return 1
     
-    def execute(self) -> int:
-        for i, step in enumerate(self.step):
+    @selenium_exception_handler
+    def go_to_portal(self) -> int:
+        logger.info("go_to_portal")
+        WebDriverWait(self.driver, 30).until(
+            EC.presence_of_element_located(
+                (By.XPATH, SofontsyElems.ACC_VENDOR_PROTAL))).click()
+        time.sleep(1)
+        return 1
+    
+    @selenium_exception_handler
+    def click_add_prod(self) -> int:
+        logger.info("click_add_prod")
+        WebDriverWait(self.driver, 30).until(
+            EC.presence_of_element_located(
+                (By.XPATH, SofontsyElems.ADD_PRODUCT))).click()
+        # Check for page title "Add a New product"
+        WebDriverWait(self.driver, 30).until(
+            EC.presence_of_element_located(
+                (By.XPATH, SofontsyElems.PAGE_TITLE)))
+        time.sleep(1)
+        return 1
+    
+    def execute(self, _type: str) -> int:
+        if _type == "init":
+            steps = self.init_steps
+        elif _type == "upload":
+            steps = self.upload_steps
+        else:
+            raise
+        for i, step in enumerate(steps):
             if not step():
                 logger.error(f"Pipeline failed at step {i + 1} ({step.__name__}).")
                 return 0
@@ -67,7 +108,7 @@ class UploadFile:
             try:
                 product_name = WebDriverWait(self.driver, 60).until(
                     EC.presence_of_element_located(
-                        (By.XPATH, CreateFabricaElems.PRODUCT)))
+                        (By.XPATH, SofontsyElems.PRODUCT)))
                 if product_name:
                     break
             except Exception as e:
@@ -82,50 +123,22 @@ class UploadFile:
         return 1
 
     @selenium_exception_handler
-    def write_category(self) -> int:
-        logger.info("write_category")
-        while True:
-            try:
-                category = WebDriverWait(self.driver, 30).until(
-                    EC.presence_of_element_located(
-                        (By.XPATH, CreateFabricaElems.CATEGORY)))
-                if category:
-                    break
-            except Exception as e:
-                print(e)
-                print("Waiting for category")
-                time.sleep(5)
-        
-        category.click()
-        
-        time.sleep(1)
-        while True:
-            try:
-                category_input = WebDriverWait(self.driver, 30).until(
-                    EC.presence_of_element_located(
-                        (By.XPATH, CreateFabricaElems.CATEGORY_INPUT)))
-                if category_input:
-                    break
-            except Exception as e:
-                print(e)
-                time.sleep(5)
-        
-        category_input.click()
-        write_with_delay(element=category_input, message=self.current_item.category, interval=0.01)
-        category_input.send_keys(Keys.ENTER)
-        return 1
-
-    @selenium_exception_handler
     def write_price(self) -> int:
         logger.info("write_price")
         time.sleep(1)
         price = WebDriverWait(self.driver, 30).until(
             EC.presence_of_element_located(
-                (By.XPATH, CreateFabricaElems.PRICE)))
+                (By.XPATH, SofontsyElems.PRICE)))
         scroll_to_elem(self.driver, price)
         price.click()
         time.sleep(1)
         write_with_delay(element=price, message=self.current_item.price)
+        com_price = WebDriverWait(self.driver, 30).until(
+            EC.presence_of_element_located(
+                (By.XPATH, SofontsyElems.COMPARE_PRICE)))
+        com_price.click()
+        time.sleep(1)
+        write_with_delay(element=price, message=self.current_item.com_price)
         return 1
 
     @selenium_exception_handler
@@ -134,7 +147,7 @@ class UploadFile:
         time.sleep(1)
         description = WebDriverWait(self.driver, 30).until(
             EC.presence_of_element_located(
-                (By.XPATH, CreateFabricaElems.DESCRIPTION)))
+                (By.XPATH, SofontsyElems.DESCRIPTION)))
         scroll_to_elem(self.driver, description)
         description.click()
         time.sleep(1)
@@ -147,7 +160,7 @@ class UploadFile:
         time.sleep(1)
         tags = WebDriverWait(self.driver, 10).until(
             EC.presence_of_element_located(
-                (By.XPATH, CreateFabricaElems.TAGS)))
+                (By.XPATH, SofontsyElems.TAGS)))
         scroll_to_elem(self.driver, tags)
         tags.click()
         time.sleep(1)
@@ -160,12 +173,12 @@ class UploadFile:
         time.sleep(1)
         upload_img = WebDriverWait(self.driver, 30).until(
             EC.presence_of_element_located(
-                (By.XPATH, CreateFabricaElems.UPLOAD_PRODUCT_IMGS)))
+                (By.XPATH, SofontsyElems.UPLOAD_PRODUCT_IMGS)))
         scroll_to_elem(self.driver, upload_img)
         for img in self.current_item.img_files:
             upload_img_input = WebDriverWait(self.driver, 30).until(
                 EC.presence_of_element_located(
-                    (By.XPATH, CreateFabricaElems.UPLOAD_PRODUCT_IMGS_INPUT)))
+                    (By.XPATH, SofontsyElems.UPLOAD_PRODUCT_IMGS_INPUT)))
             time.sleep(1.5)
             upload_img_input.send_keys(img)
             time.sleep(1)
@@ -177,10 +190,10 @@ class UploadFile:
         time.sleep(1)
         upload_zip = WebDriverWait(self.driver, 30).until(
             EC.presence_of_element_located(
-                (By.XPATH, CreateFabricaElems.UPLOAD_PRODUCT_FILE)))
+                (By.XPATH, SofontsyElems.UPLOAD_PRODUCT_FILE)))
         upload_zip_input = WebDriverWait(self.driver, 30).until(
             EC.presence_of_element_located(
-                (By.XPATH, CreateFabricaElems.UPLOAD_PRODUCT_FILE_INPUT)))
+                (By.XPATH, SofontsyElems.UPLOAD_PRODUCT_FILE_INPUT)))
         scroll_to_elem(self.driver, upload_zip)
         upload_zip_input.send_keys(self.current_item.zip_file)
         time.sleep(1.5)
@@ -192,21 +205,21 @@ class UploadFile:
         time.sleep(1)
         freebie_box = WebDriverWait(self.driver, 30).until(
             EC.presence_of_element_located(
-                (By.XPATH, CreateFabricaElems.CHECKBOX_FREEBIE)))
+                (By.XPATH, SofontsyElems.CHECKBOX_FREEBIE)))
         scroll_to_elem(self.driver, freebie_box)
         time.sleep(0.5)
         freebie_box.click()
         
         deal_box = WebDriverWait(self.driver, 30).until(
             EC.presence_of_element_located(
-                (By.XPATH, CreateFabricaElems.CHECKBOX_DEALS)))
+                (By.XPATH, SofontsyElems.CHECKBOX_DEALS)))
         scroll_to_elem(self.driver, deal_box)
         time.sleep(0.5)
         deal_box.click()
         
         term_box = WebDriverWait(self.driver, 30).until(
             EC.presence_of_element_located(
-                (By.XPATH, CreateFabricaElems.CHECKBOX_TERMS)))
+                (By.XPATH, SofontsyElems.CHECKBOX_TERMS)))
         scroll_to_elem(self.driver, term_box)
         time.sleep(1)
         term_box.click()
@@ -220,7 +233,7 @@ class UploadFile:
             try:
                 submit = WebDriverWait(self.driver, 30).until(
                     EC.presence_of_element_located(
-                        (By.XPATH, CreateFabricaElems.SUBMIT)))
+                        (By.XPATH, SofontsyElems.SUBMIT)))
                 if submit:
                     break
             except Exception as e:
@@ -235,7 +248,7 @@ class UploadFile:
 
                 submit = WebDriverWait(self.driver, 10).until(
                     EC.presence_of_element_located(
-                        (By.XPATH, CreateFabricaElems.SUBMIT)))
+                        (By.XPATH, SofontsyElems.SUBMIT)))
                 if submit:
                     continue
                 else:
@@ -253,7 +266,7 @@ class UploadFile:
         while time.time() - start_time < timeout:
             statuses = WebDriverWait(self.driver, 30).until(
                 EC.presence_of_all_elements_located(
-                    (By.XPATH, CreateFabricaElems.UPLOAD_ITEMS_STATUS)))
+                    (By.XPATH, SofontsyElems.UPLOAD_ITEMS_STATUS)))
             for status in statuses:
                 if "success" in status.get_attribute("class"):
                     successful_uploads += 1

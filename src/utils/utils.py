@@ -196,7 +196,7 @@ def generator_items(df) -> Generator[Dict[str, Any], None, None]:
             continue
     
     logger.info(f"Generator completed. Processed: {processed_items}, Skipped: {skipped_items}, Yielded: {processed_items - skipped_items}")
-    # return item_dict
+
 
 def prompt_open_file() -> pd.DataFrame:
     try:

@@ -5,8 +5,10 @@ import sys
 
 from src.logger import setup_logger
 from src.settings import SOFONTSY_DATA_DIR, LOG_DIR
-from src.utils import utils
+from src.utils.ItemGenerator import ItemGenerator
+from src.utils.utils import prompt_open_file
 from src.open_driver import open_gemlogin_driver, close_gemlogin_driver
+from .elems import SofontsyItems
 from src.utils.load_env import *
 
 from .service import UploadFile
@@ -27,7 +29,7 @@ class Controller:
             logger.error("Failed to open driver.")
             raise
         self.pipeline = UploadFile(driver=self.driver)
-        self.df = utils.prompt_open_file()
+        self.df = prompt_open_file()
 
     def controller(self) -> None:
         """
@@ -38,13 +40,15 @@ class Controller:
             if self.df.empty:
                 logger.error("DF Empty.. Exiting..")
                 return
-            item_gen = utils.generator_items(self.df)
+            item_gen = ItemGenerator(ProcessingItem=SofontsyItems)
+            item_gen_yield = item_gen.generator_items(self.df)
+            self.pipeline.execute(_type="init")
             try:
                 while True:
-                    item = next(item_gen)
+                    item = next(item_gen_yield)
                     print(f"processing item: {item.ID}")
                     self.pipeline.set_current_item(item)
-                    self.pipeline.execute()
+                    self.pipeline.execute(_type="upload")
                     print(f"Done processing item: {item.ID}")
             except StopIteration:
                 logger.info("All items processed successfully.")
