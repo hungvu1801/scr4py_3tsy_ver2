@@ -40,7 +40,7 @@ class Controller:
             if self.df.empty:
                 logger.error("DF Empty.. Exiting..")
                 return
-            item_gen = ItemGenerator(ProcessingItem=SofontsyItems)
+            item_gen = ItemGenerator(platform="sofontsy", ProcessingItem=SofontsyItems)
             item_gen_yield = item_gen.generator_items(self.df)
             self.pipeline.execute(_type="init")
             try:

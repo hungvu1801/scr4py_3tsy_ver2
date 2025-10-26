@@ -17,7 +17,7 @@ from .config import CREATE_PRODUCT_URL
 from .elems import SofontsyElems, SofontsyItems
 
 
-logger = setup_logger(name="CreativeFabricaLog", log_dir=f"{LOG_DIR}/sofontsy_logs")
+logger = setup_logger(name="SofontsyLog", log_dir=f"{LOG_DIR}/sofontsy_logs")
 
 class UploadFile:
     def __init__(self, driver: webdriver.Chrome):
@@ -32,13 +32,11 @@ class UploadFile:
         self.upload_steps = [
             self.click_add_prod,
             self.write_product_name,
-            self.write_category,
             self.write_price,
             self.write_description,
             self.write_tags,
             self.upload_imgs,
             self.upload_zip,
-            # self.check_boxes,
             self.check_upload_status,
             self.click_submit,
             self.check_upload_completed
@@ -199,31 +197,6 @@ class UploadFile:
         time.sleep(1.5)
         return 1
 
-    @selenium_exception_handler
-    def check_boxes(self) -> int:
-        logger.info("check_boxes")
-        time.sleep(1)
-        freebie_box = WebDriverWait(self.driver, 30).until(
-            EC.presence_of_element_located(
-                (By.XPATH, SofontsyElems.CHECKBOX_FREEBIE)))
-        scroll_to_elem(self.driver, freebie_box)
-        time.sleep(0.5)
-        freebie_box.click()
-        
-        deal_box = WebDriverWait(self.driver, 30).until(
-            EC.presence_of_element_located(
-                (By.XPATH, SofontsyElems.CHECKBOX_DEALS)))
-        scroll_to_elem(self.driver, deal_box)
-        time.sleep(0.5)
-        deal_box.click()
-        
-        term_box = WebDriverWait(self.driver, 30).until(
-            EC.presence_of_element_located(
-                (By.XPATH, SofontsyElems.CHECKBOX_TERMS)))
-        scroll_to_elem(self.driver, term_box)
-        time.sleep(1)
-        term_box.click()
-        return 1
 
     @selenium_exception_handler
     def click_submit(self) -> int:

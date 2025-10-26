@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import List
 from .config import *
 class SofontsyElems:
+    LOGIN: str = "//a[@name='login']"
     ACCOUNT_BTN: str = "//a[contains(text(), 'Account')]"
     ACC_VENDOR_PROTAL: str = "//button[@title='access vendor portal']"
     ADD_PRODUCT: str = "//span[contains(text(), 'Add Product')]"
@@ -29,12 +30,13 @@ class SofontsyElems:
 
 @dataclass
 class SofontsyItems:
-    ID: str
+    # ID: str
+    barcode: str
     title: str
     description: str
     price: str
     compare_at_price: str
-    category: str
+    # category: str
     tags: str
     zip_file: str
     img_files: List[str] = None
