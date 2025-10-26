@@ -5,19 +5,16 @@ import sys
 
 from src.logger import setup_logger
 from src.settings import LOG_DIR
-from src.utils.ItemGenerator import ItemGenerator
 from src.utils.utils import prompt_open_file
 from src.open_driver import open_gemlogin_driver, close_gemlogin_driver
 from .elems import CanvasItems
+from .service import RemoveBGService
 from src.utils.load_env import *
-
-from .service import UploadFile
 
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 os.makedirs(f"{LOG_DIR}/canvas_logs", exist_ok=True)
-# os.makedirs(f"{SOFONTSY_DATA_DIR}", exist_ok=True)
 
 logger = setup_logger(name="CanvasLog", log_dir=f"{LOG_DIR}/canvas_logs")
 
@@ -28,7 +25,7 @@ class Controller:
         if not self.driver:
             logger.error("Failed to open driver.")
             raise
-        self.pipeline = UploadFile(driver=self.driver)
+        self.pipeline = RemoveBGService(driver=self.driver)
         self.df = prompt_open_file()
 
     def controller(self) -> None:
@@ -40,16 +37,13 @@ class Controller:
             if self.df.empty:
                 logger.error("DF Empty.. Exiting..")
                 return
-            item_gen = ItemGenerator(ProcessingItem=SofontsyItems)
-            item_gen_yield = item_gen.generator_items(self.df)
-            self.pipeline.execute(_type="init")
+            # item_gen = ItemGenerator(ProcessingItem=SofontsyItems)
+            # item_gen_yield = item_gen.generator_items(self.df)
             try:
                 while True:
-                    item = next(item_gen_yield)
-                    print(f"processing item: {item.ID}")
-                    self.pipeline.set_current_item(item)
+                    # item = next(item_gen_yield)
                     self.pipeline.execute(_type="upload")
-                    print(f"Done processing item: {item.ID}")
+
             except StopIteration:
                 logger.info("All items processed successfully.")
             except Exception as e:
