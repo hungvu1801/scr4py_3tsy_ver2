@@ -5,10 +5,8 @@ import sys
 
 from src.logger import setup_logger
 from src.settings import LOG_DIR
-from src.utils.utils import prompt_open_file
 from src.open_driver import open_gemlogin_driver, close_gemlogin_driver
-from .elems import CanvasItems
-from .service import RemoveBGService
+from .service import CanvaService
 from src.utils.load_env import *
 
 
@@ -25,31 +23,24 @@ class Controller:
         if not self.driver:
             logger.error("Failed to open driver.")
             raise
-        self.pipeline = RemoveBGService(driver=self.driver)
-        self.df = prompt_open_file()
+        self.pipeline = CanvaService(driver=self.driver)
 
-    def controller(self) -> None:
+
+    def main(self) -> None:
         """
         This function serves as a placeholder for the controller logic.
         It currently does not perform any operations.
         """
         try:
-            if self.df.empty:
-                logger.error("DF Empty.. Exiting..")
-                return
-            # item_gen = ItemGenerator(ProcessingItem=SofontsyItems)
-            # item_gen_yield = item_gen.generator_items(self.df)
             try:
-                while True:
-                    # item = next(item_gen_yield)
-                    self.pipeline.execute(_type="upload")
-
+                self.pipeline.execute()
             except StopIteration:
                 logger.info("All items processed successfully.")
             except Exception as e:
                 logger.error(f"Error {e}")
         except KeyboardInterrupt:
             logger.info("Keyboard interrupt detected. Exiting gracefully.")
+        finally:
             self.close_controller()
 
     def close_controller(self):
