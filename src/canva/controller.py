@@ -17,7 +17,8 @@ os.makedirs(f"{LOG_DIR}/canvas_logs", exist_ok=True)
 logger = setup_logger(name="CanvasLog", log_dir=f"{LOG_DIR}/canvas_logs")
 
 class Controller:
-    def __init__(self, profile_id: str):
+    def __init__(self, profile_id: str, project_url: str):
+        self.project_url = project_url
         self.profile_id = profile_id
         self.driver = open_gemlogin_driver(profile_id=profile_id)
         if not self.driver:
@@ -33,7 +34,7 @@ class Controller:
         """
         try:
             try:
-                self.pipeline.execute()
+                self.pipeline.execute(self.project_url)
             except StopIteration:
                 logger.info("All items processed successfully.")
             except Exception as e:

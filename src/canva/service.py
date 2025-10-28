@@ -4,12 +4,12 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 import time
+from typing import Optional
 from src.creative_fabrica.config import *
 from src.logger import setup_logger
 from src.settings import LOG_DIR
 from src.utils.action_utils import scroll_to_elem
 from src.utils.decorators import selenium_exception_handler
-from .config import PROJECT_URL
 from .elems import CanvaElems
 from src.utils.action_utils import scroll_to_elem
 
@@ -24,16 +24,20 @@ class CanvaService:
         self.number_of_processed_imgs: int = 0
 
     @selenium_exception_handler
-    def go_to_main_site(self) -> int:
+    def go_to_main_site(self, project_url: str) -> int:
         logger.info("go_to_main_site")
-        self.driver.get(PROJECT_URL)
+        self.driver.get(project_url)
         self.driver.implicitly_wait(10)
         time.sleep(1)
         return 1
     
-    def increment_cur_img(self):
-        self.current_img += 2
+    def increment_cur_img(self, step: int = 1) -> None:
+        self.current_img += (step + 1)
         self.number_of_processed_imgs += 1
+
+    def reset_cur_img(self) -> None:
+        self.current_img = 1
+        self.number_of_processed_imgs = 0
 
     @selenium_exception_handler
     def find_img_elem_by_num(self) -> int:
@@ -47,6 +51,25 @@ class CanvaService:
         time.sleep(1)
         return 1
 
+    # @selenium_exception_handler
+    def get_img_name(self) -> Optional[str]:
+        logger.info("get_img_name")
+        try:
+            time.sleep(1)
+            img_name = self.img.find_element(By.XPATH, CanvaElems.IMG_NAME).text
+            logger.info(f"{self.current_img} -- img_name: {img_name}")
+            time.sleep(1)
+            return img_name
+        except Exception as e:
+            logger.error(f"Error in get_img_name: {e}")
+            return 
+
+    def is_name_contains_edit(self, name: str) -> bool:
+        logger.info("is_name_contains_edit")
+        if "edit" in name.lower():
+            return True
+        return False
+    
     @selenium_exception_handler
     def click_img_menu(self):
         logger.info("click_img_menu")
@@ -65,7 +88,14 @@ class CanvaService:
                 (By.XPATH, CanvaElems.EDIT_IMG_BTN))).click()
         time.sleep(1)
     
-    
+    @selenium_exception_handler
+    def click_download_img(self):
+        logger.info("click_download_img")
+        WebDriverWait(self.driver, 50).until(
+            EC.presence_of_element_located(
+                (By.XPATH, CanvaElems.DOWNLOAD_IMG_BTN))).click()
+        time.sleep(1)
+
     @selenium_exception_handler
     def click_remove_bg(self):
         logger.info("click_remove_bg")
@@ -104,9 +134,8 @@ class CanvaService:
         save_btn.click()
         time.sleep(3)
 
-    def execute(self):
-        self.go_to_main_site()
-        # input()
+    def execute(self, project_url: str) -> None:
+        self.go_to_main_site(project_url)
         while True:
             try:
                 if not self.find_img_elem_by_num():
@@ -121,3 +150,14 @@ class CanvaService:
             except Exception as e:
                 logger.error(f"Error in execute loop: {e}")
                 break
+        logger.info(f"Done processing -- total images processed: {self.number_of_processed_imgs}")
+        self.reset_cur_img()
+        while True:
+            self.find_img_elem_by_num()
+            name = self.get_img_name()
+            if name and self.is_name_contains_edit(name):
+                self.click_img_menu()
+                self.click_download_img()
+            else:
+                break
+            self.increment_cur_img(step=0)
