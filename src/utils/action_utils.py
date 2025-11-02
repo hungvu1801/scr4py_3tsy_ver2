@@ -18,7 +18,7 @@ logger = setup_logger(name="UtilsLogger", log_dir=f"{LOG_DIR}/utils_logs")
 
 def scroll_to_elem(
         driver: webdriver.Chrome, 
-        element: Optional[WebElement], 
+        element: Optional[WebElement] = None, 
         new_position: Optional[int] = None) -> None:
     if element is not None:
         driver.execute_script("arguments[0].scrollIntoView({ behavior: 'smooth', block: 'center' });", element)
@@ -35,7 +35,7 @@ def scroll_to_elem(
 def random_crawling(driver: webdriver.Chrome, is_card: bool = False) -> None:
     """
     Simulate human-like scrolling behavior.
-    
+     
     Args:
         driver: Chrome WebDriver instance
     """
@@ -85,6 +85,30 @@ def random_crawling(driver: webdriver.Chrome, is_card: bool = False) -> None:
                 
     except Exception as e:
         logger.error(f"Error during random crawling: {str(e)}")
+
+def scroll_page_down(driver: webdriver.Chrome, height: int = None, SCROLL_PAUSE_TIME: int = 2.5) -> None:
+
+    if not height:
+        last_height = driver.execute_script("return document.body.scrollHeight")
+        while True:
+            # Scroll down to bottom
+            driver.execute_script("""
+                window.scrollTo({
+                    top: document.body.scrollHeight,
+                    behavior: 'smooth'
+                });
+            """)
+
+            # Wait to load page
+            time.sleep(SCROLL_PAUSE_TIME)
+
+            # Calculate new scroll height and compare with last scroll height
+            new_height = driver.execute_script("return document.body.scrollHeight")
+            if new_height == last_height:
+                break
+            last_height = new_height
+    else:
+        driver.execute_script(f"window.scrollTo(0, {height});")
 
 def write_pyautogui(message: str, interval: float = 0.05) -> None:
     # time.sleep(3)
