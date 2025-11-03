@@ -68,6 +68,7 @@ class CanvaService:
 
         time.sleep(1)
         return has_img
+    
     def count_img_processed(self) -> None:
         print(f"Total images processed: {len(self.processed_img)}")
     # @selenium_exception_handler
@@ -87,19 +88,17 @@ class CanvaService:
         return False
     
     @selenium_exception_handler
-    def click_img_menu(self) -> None:
+    def click_img_menu(self) -> int:
         logger.info("click_img_menu")
         time.sleep(1)
         self.img.find_element(By.XPATH, CanvaElems.IMG_MENU).click()
-        # WebDriverWait(self.img, 50).until(
-        #     EC.presence_of_element_located(
-        #         (By.XPATH, CanvaElems.IMG_MENU))).click()
         time.sleep(1)
+        return 1
 
     @selenium_exception_handler
-    def click_edit_img(self) -> None:
+    def click_edit_img(self) -> int:
         logger.info("click_edit_img")
-        WebDriverWait(self.driver, 30).until(
+        WebDriverWait(self.driver, 60).until(
             EC.presence_of_element_located(
                 (By.XPATH, CanvaElems.EDIT_IMG_BTN))).click()
         time.sleep(1)
@@ -116,7 +115,7 @@ class CanvaService:
     def click_remove_bg(self) -> None:
         logger.info("click_remove_bg")
         time.sleep(2.5)
-        WebDriverWait(self.driver, 30).until(
+        WebDriverWait(self.driver, 60).until(
             EC.presence_of_element_located(
                 (By.XPATH, CanvaElems.REMOVE_BG_BTN))).click()
         time.sleep(1.5)
@@ -156,17 +155,22 @@ class CanvaService:
     @selenium_exception_handler
     def save_img(self) -> None:
         logger.info("save_img")
-        save_btn = WebDriverWait(self.driver, 30).until(
+        save_btn = WebDriverWait(self.driver, 60).until(
             EC.presence_of_element_located(
                 (By.XPATH, CanvaElems.SAVE_BTN)))
+        
+        if save_btn.get_attribute("aria-disabled") == "true":
+            return 0
+
         save_btn.click()
 
         time.sleep(3)
+        return 1
 
     @selenium_exception_handler
     def close_img(self) -> None:
         logger.info("close_img")
-        WebDriverWait(self.driver, 30).until(
+        WebDriverWait(self.driver, 60).until(
             EC.presence_of_element_located(
                 (By.XPATH, CanvaElems.CLOSE_BTN))).click()
         logger.info(f"Skipped image that can not remove background: {self.get_img_name()}")
@@ -192,7 +196,9 @@ class CanvaService:
                     break
                 logger.info(f"Processing image number: {self.number_of_processed_imgs + 1}")
                 self.count_img_processed()
-                self.click_img_menu()
+            
+                if not self.click_img_menu():
+                    continue
                 self.click_edit_img()
                 self.click_remove_bg()
                 if not self.check_if_can_remove_bg():
@@ -200,14 +206,23 @@ class CanvaService:
                     self.close_img()
                     continue
                 self.check_is_finished_remove_bg()
-                self.save_img()
+                if not self.save_img():
+                    self.close_img()
+                    continue
                 self.increment_cur_img()
             except Exception as e:
                 logger.error(f"Error in execute loop: {e}")
                 continue
         logger.info(f"Done processing -- total images processed: {self.number_of_processed_imgs}")
-        self.reset_cur_img()
-        self.refresh_page()
+        self.execute_download_edited()
+
+    def execute_download_edited(self, project_url: str = None) -> None:
+        logger.info(f"execute_download_edited")
+        if project_url:
+            self.go_to_main_site(project_url)
+        else:
+            self.reset_cur_img()
+            self.refresh_page()
         while True:
             try:
                 if not self.find_img_elem(filter_edit=False):
