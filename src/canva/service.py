@@ -185,7 +185,7 @@ class CanvaService:
     #     time.sleep(4)
 
     def execute(self, project_url: str) -> None:
-        # self.go_to_main_site(project_url)
+        self.go_to_main_site(project_url)
         while True:
             try:
                 if not self.find_img_elem():
