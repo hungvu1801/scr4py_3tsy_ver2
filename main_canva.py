@@ -10,7 +10,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "-p","--profile", 
         nargs="+", 
-        choices=["1", "2", "3", "4"], 
+        choices=["1", "2", "3", "4", "5"], 
         required=True,
         help="Specify which profile(s) to run (e.g., --profile 1 2 3 4)"
     )
