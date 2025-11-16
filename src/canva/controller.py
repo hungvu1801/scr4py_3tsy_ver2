@@ -34,31 +34,40 @@ class Controller:
         It currently does not perform any operations.
         """
         try:
-            df = prompt_open_file()
-            if df.empty:
-                logger.error("File is empty.")
-                return
-            url_generator = generator_url(df, url_column=0)
-            while True:
+            if self.project_url:
                 try:
-                    self.project_url = next(url_generator)
-                    if not url_validator(self.project_url):
-                        logger.error(f"Invalid URL: {self.project_url}")
-                        continue
-                    if self.project_url in self.done_items:
-                        logger.info(f"URL already processed: {self.project_url}")
-                        continue
                     print(self.project_url)
-                    # Execute the main pipeline
                     self.pipeline.execute(self.project_url)
-                    self.done_items.append(self.project_url)
-
-                except StopIteration:
-                    logger.info("All items processed successfully.")
-                    break
+                    return
                 except Exception as e:
-                    logger.error(f"Error {e}")
-                    continue
+                    logger.error(f"Error in main controller {e}")
+                    return
+            else:
+                df = prompt_open_file()
+                if df.empty:
+                    logger.error("File is empty.")
+                    return
+                url_generator = generator_url(df, url_column=0)
+                while True:
+                    try:
+                        self.project_url = next(url_generator)
+                        if not url_validator(self.project_url):
+                            logger.error(f"Invalid URL: {self.project_url}")
+                            continue
+                        if self.project_url in self.done_items:
+                            logger.info(f"URL already processed: {self.project_url}")
+                            continue
+                        print(self.project_url)
+                        # Execute the main pipeline
+                        self.pipeline.execute(self.project_url)
+                        self.done_items.append(self.project_url)
+
+                    except StopIteration:
+                        logger.info("All items processed successfully.")
+                        break
+                    except Exception as e:
+                        logger.error(f"Error in main controller {e}")
+                        continue
             self.close_controller()
 
         except KeyboardInterrupt:

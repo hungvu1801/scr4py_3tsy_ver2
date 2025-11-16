@@ -15,9 +15,15 @@ if __name__ == "__main__":
         required=True,
         help="Specify which profile(s) to run (e.g., --profile 1 2 3 4)",
     )
+    parser.add_argument(
+        "-u",
+        "--project-url",
+        type=str,
+        default=None,
+        help="Specify project file (e.g., --project-url https://www.canva.com/folder/FAF3D1dlNTc)",
+    )
 
     args = parser.parse_args()
+    controller = Controller(profile_id=args.profile[0], project_url=args.project_url)
 
-    controller = Controller(profile_id=args.profile[0])
-    # controller = Controller(profile_id="1")
     controller.main()
