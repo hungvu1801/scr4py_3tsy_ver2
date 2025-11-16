@@ -19,6 +19,7 @@ logger = setup_logger(name="UtilsLogger", log_dir=f"{LOG_DIR}/utils_logs")
 
 upload_dir = os.path.join(os.getcwd(), "data")
 
+
 def download_directly_with_selenium(driver, url, save_path):
     try:
         # Navigate to the image URL directly
@@ -40,20 +41,20 @@ def download_directly_with_selenium(driver, url, save_path):
             }
             return null;
             """
-            
+
             base64_image = driver.execute_script(canvas_script)
-            
+
             if base64_image:
                 # Decode and save
                 image_data = base64.b64decode(base64_image)
-                with open(save_path, 'wb') as f:
+                with open(save_path, "wb") as f:
                     f.write(image_data)
                 logger.info(f"Error - Downloaded via base64 : {save_path}")
                 return True
-                
+
         except Exception as e:
             logger.error(f"Error - Base64 method failed : {e}")
-        
+
         # Method B: Use browser's fetch API
         fetch_script = f"""
         return fetch('{url}')
@@ -66,27 +67,28 @@ def download_directly_with_selenium(driver, url, save_path):
                 }});
             }});
         """
-        
+
         try:
             base64_data = driver.execute_async_script(f"""
                 var callback = arguments[arguments.length - 1];
                 {fetch_script}.then(callback);
             """)
-            
+
             if base64_data:
                 image_data = base64.b64decode(base64_data)
-                with open(save_path, 'wb') as f:
+                with open(save_path, "wb") as f:
                     f.write(image_data)
                 logger.info(f"Error - Downloaded via fetch: {save_path}")
                 return True
-                
+
         except Exception as e:
             logger.error(f"Error - Fetch method failed: {e}")
-        
+
         return False
-    
+
     except Exception as e:
         logger.error(f"Error: Fetch method all failed: {e}")
+
 
 def sku_generator(last_sku: str) -> str:
     try:
@@ -110,11 +112,12 @@ def sku_generator(last_sku: str) -> str:
         return next_sku
     except Exception as e:
         logger.error(f"Error {e}")
-        return "THSP01012025001" # Fallback SKUs
+        return "THSP01012025001"  # Fallback SKUs
+
 
 def data_construct_for_gsheet(
-        data: Union[list, str], 
-        length: Optional[int] = None) -> List[List[str]]:
+    data: Union[list, str], length: Optional[int] = None
+) -> List[List[str]]:
     try:
         if isinstance(data, list):
             return [[item] for item in data]
@@ -129,10 +132,7 @@ def data_construct_for_gsheet(
 
 def get_imgs_and_zip(data_directory) -> Union[Dict[str, list], None]:
     try:
-        files = {
-            "img_files": [],
-            "zip_file": []
-        }
+        files = {"img_files": [], "zip_file": []}
         for f in os.listdir(data_directory):
             _, ext = os.path.splitext(f)
             f = os.path.join(data_directory, f)
@@ -143,24 +143,24 @@ def get_imgs_and_zip(data_directory) -> Union[Dict[str, list], None]:
         files["img_files"].sort()
         return files
     except Exception as err:
-        logger.error(f'Error in get_imgs_and_zip {err}')
+        logger.error(f"Error in get_imgs_and_zip {err}")
         return None
-    
+
+
 def generator_items(df) -> Generator[Dict[str, Any], None, None]:
-    
     total_items = len(df)
     processed_items = 0
     skipped_items = 0
-    
+
     logger.info(f"Starting to process {total_items} items from DataFrame")
-    
+
     for index, item in df.iterrows():
         processed_items += 1
-        item_id = item.get('ID', f'Row_{index}')
-        
+        item_id = item.get("ID", f"Row_{index}")
+
         try:
             logger.info(f"Processing item {processed_items}/{total_items}: {item_id}")
-            
+
             item_dict: Dict[str, Any] = {}
             item_dir = os.path.join(upload_dir, item.loc["ID"])
 
@@ -170,14 +170,14 @@ def generator_items(df) -> Generator[Dict[str, Any], None, None]:
             item_dict["price"] = str(item.loc["price"])
             item_dict["category"] = item.loc["category"]
             item_dict["tag"] = item.loc["tag"]
-            
+
             # item_dict["item_dir"] = item_dir
             files = get_imgs_and_zip(item_dir)
             if not files:
                 logger.error(f"No images or zip file found for item {item_id}")
                 skipped_items += 1
                 continue
-                
+
             img_files: List[str] = files.get("img_files")
             zip_file: str = files.get("zip_file")[0]
             item_dict["zip_file"] = zip_file
@@ -189,24 +189,59 @@ def generator_items(df) -> Generator[Dict[str, Any], None, None]:
             item = CreateFabricaItems(**item_dict)
             logger.info(f"Successfully prepared item {item_id} for processing")
             yield item
-            
+
         except Exception as e:
             logger.error(f"Error in generator_items: {e}. \nItem: {item_id}")
             skipped_items += 1
             continue
-    
-    logger.info(f"Generator completed. Processed: {processed_items}, Skipped: {skipped_items}, Yielded: {processed_items - skipped_items}")
+
+    logger.info(
+        f"Generator completed. Processed: {processed_items}, Skipped: {skipped_items}, Yielded: {processed_items - skipped_items}"
+    )
 
 
 def prompt_open_file() -> pd.DataFrame:
     try:
         root = tk.Tk()
         root.withdraw()
-        fileDir = askopenfilename(title="Open excel file")
+        file_path = askopenfilename(
+            title="Open excel file",
+            filetypes=[
+                ("Excel Files", "*.xlsx *.xls"),
+                ("CSV Files", "*.csv"),
+                ("All Files", "*.*"),
+            ],
+        )
+        _, extension = os.path.splitext(file_path)
+
         df = pd.DataFrame()
-        if fileDir:
-            df = pd.read_excel(fileDir)
+
+        if file_path:
+            if extension in [".csv"]:
+                df = pd.read_csv(file_path, header=None)
+            elif extension in [".xlsx", ".xls"]:
+                df = pd.read_excel(file_path, header=None)
         return df
+
     except Exception as e:
         logger.error(f"Error in prompt_open_file {e}")
         return df
+
+
+def generator_url(
+    df: pd.DataFrame, url_column: int = 0
+) -> Generator[Dict[str, Any], None, None]:
+    try:
+        for item in df.iloc[:, url_column]:
+            yield item
+    except Exception as e:
+        logger.error(f"Error in generator_url {e}")
+        return
+
+
+def url_validator(url: str) -> bool:
+    if not url:
+        return False
+    if not url.startswith(("http://", "https://")):
+        return False
+    return True
