@@ -200,7 +200,7 @@ def generator_items(df) -> Generator[Dict[str, Any], None, None]:
     )
 
 
-def prompt_open_file() -> pd.DataFrame:
+def prompt_open_file(header: Optional[int] = None) -> pd.DataFrame:
     try:
         root = tk.Tk()
         root.withdraw()
@@ -218,9 +218,9 @@ def prompt_open_file() -> pd.DataFrame:
 
         if file_path:
             if extension in [".csv"]:
-                df = pd.read_csv(file_path, header=None)
+                df = pd.read_csv(file_path, header=header)
             elif extension in [".xlsx", ".xls"]:
-                df = pd.read_excel(file_path, header=None)
+                df = pd.read_excel(file_path, header=header)
         return df
 
     except Exception as e:

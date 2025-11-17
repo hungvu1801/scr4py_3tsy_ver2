@@ -30,7 +30,7 @@ def controller(profile_id) -> None:
             logger.error("Failed to open driver.")
             return
 
-        df = utils.prompt_open_file()
+        df = utils.prompt_open_file(header=0)
         if df.empty:
             logger.error("DF Empty.. Exiting..")
             return
