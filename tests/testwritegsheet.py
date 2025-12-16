@@ -18,24 +18,23 @@ def make_random_data(i: int):
 
 def test_write_gsheet():
     spreadsheetId = os.getenv("SPREADSHEET_ID")
-    sheet_name = os.getenv("SHEET_NAME")
+    # sheet_name = os.getenv("SHEET_NAME")
     
-    if not spreadsheetId or not sheet_name:
-        raise ValueError("Environment variables SPREADSHEET_ID and SHEET_NAME must be set")
+    # if not spreadsheetId or not sheet_name:
+    #     raise ValueError("Environment variables SPREADSHEET_ID and SHEET_NAME must be set")
     
+    spreadsheetId = os.getenv("SPREADSHEET_ID")
+    credentials = gg_utils.check_credentials()
+    service = build('sheets', 'v4', credentials=credentials)
     gsheet_writer = GSheetWrite(
-        update_cols=update_cols_etsy,
-        spreadsheetId=spreadsheetId,
-        sheet_name=sheet_name,
-        queue_number=5,
-        start_column="A")
-    gsheet_writer.write_to_gsheet_value("A25", "test0")
+        service=service)
+    gsheet_writer.write_to_gsheet_value(spreadsheetId=spreadsheetId, range_name="GetLink!A3", data=[["test0"], ["test1"], ["test2"]])
 
-    gsheet_writer.write_to_gsheet_value("A26:A27", [["test"], ["test2"]])
-    for i in range(11):
-        gsheet_writer.add_to_queue(make_random_data(i))
+    # gsheet_writer.write_to_gsheet_value("A26:A27", [["test"], ["test2"]])
+    # for i in range(11):
+    #     gsheet_writer.add_to_queue(make_random_data(i))
 
-    gsheet_writer.close_queue()
+    # gsheet_writer.close_queue()
 
 def test_read_gsheet():
     spreadsheetId = os.getenv("SPREADSHEET_ID")

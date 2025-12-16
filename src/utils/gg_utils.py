@@ -1,11 +1,10 @@
 from datetime import datetime
-import logging
 import os
 
 import time
 import requests
 
-from typing import Tuple, Any, List, Dict
+from typing import Tuple, Any, List, Dict, Union
 from urllib.error import ContentTooShortError
 
 # import urllib.request
@@ -17,7 +16,8 @@ from googleapiclient.discovery import build
 from src.logger import setup_logger
 from src.settings import LOG_DIR, SCOPES
 
-logger = setup_logger(name="IdeogramLogger", log_dir=f"{LOG_DIR}/ideogram_logs")
+os.makedirs(f"{LOG_DIR}/utils_logs", exist_ok=True)
+logger = setup_logger(name="UtilsLogger", log_dir=f"{LOG_DIR}/utils_logs")
 
 def download_media(
         url:str, 
@@ -48,7 +48,7 @@ def download_media(
                                     f.write(chunk)
                         return 0
                     else:
-                        logger.info(f"Failed to download image: {url} -- Status code: {response.status_code}")
+                        logger.error(f"Failed to download image: {url} -- Status code: {response.status_code}")
                         return -1
                 else:
                     response = requests.get(url, timeout=10)
@@ -57,18 +57,17 @@ def download_media(
                             f.write(response.content)
                         return 0
                     else:
-                        logger.info(f"Failed to download image: {url} -- Status code: {response.status_code}")
+                        logger.error(f"Failed to download image: {url} -- Status code: {response.status_code}")
                         return -1
 
             else:
-                print("url is invalid:", url)
+                logger.error(f"url is not valid : {url}")
                 return -1
-        except ContentTooShortError: # exception when image is broken, try send request again
-            logger.error(f"{ContentTooShortError} -- Retry Download img = {name}; path = {directory}")
+        except ContentTooShortError as e: # exception when image is broken, try send request again
+            logger.error(f"Error {e} -- Retry Download img = {name}; path = {directory}")
             num_of_tried += 1
         except ValueError: # exception when url is not downloadable
             logger.error(f"url is not valid : {url}")
-            print("url is invalid:", url)
             return -1
     if num_of_tried >= 2:
         raise ContentTooShortError
@@ -105,7 +104,12 @@ def check_last_value_in_column(
         logger.error(f'An error occurred: {err}')
         return (-1, None)
 
-def check_last_value_in_row(spreadsheetId, sheet, sheet_name:str, row_search:int, start_column:str="A") -> Tuple[str, Any]:
+def check_last_value_in_row(
+        spreadsheetId: str, 
+        sheet,
+        sheet_name:str,
+        row_search:int,
+        start_column:str="A") -> Tuple[str, Any]:
     try:
 
         _range = f'{sheet_name}!{start_column}{row_search}:ZZ{row_search}'  # ie. A2:ZZ2
@@ -129,11 +133,16 @@ def check_last_value_in_row(spreadsheetId, sheet, sheet_name:str, row_search:int
         
         return (col_letter, row_values[i])
     
-    except Exception as err:
-        logger.error(f'An error occurred: {err}')
+    except Exception as e:
+        logger.error(f'Error {e}')
         return (-1, None)
 
-def check_for_checked_rows(spreadsheetId, sheet, sheet_name:str, column_search:str, start_row:int=2) -> list:
+def check_for_checked_rows(
+        spreadsheetId: str, 
+        sheet, 
+        sheet_name: str, 
+        column_search: str, 
+        start_row: int=2) -> list:
     try:
         # Get all values from column H
         _range = f'{sheet_name}!{column_search}{start_row}:{column_search}'  # ie. H2:H
@@ -147,8 +156,8 @@ def check_for_checked_rows(spreadsheetId, sheet, sheet_name:str, column_search:s
             if _values[i] and _values[i][0].strip() == 'TRUE':  # if not empty or just spaces
                 checked_rows.append(i + start_row) # Because we start from row i in the sheet
         return checked_rows
-    except Exception as err:
-        logger.error(f'An error occurred: {err}')
+    except Exception as e:
+        logger.error(f'Error {e}')
         return -1
     
 def check_credentials():
@@ -197,7 +206,7 @@ def get_column_index(column: str) -> int:
     return result - 1
 
 def create_new_sheets_with_template(
-        spreadsheetId, 
+        spreadsheetId: str, 
         sheet, 
         source_sheet_name:str, 
         target_sheet_name:str, 
@@ -240,8 +249,6 @@ def create_new_sheets_with_template(
         update_body = {
             "values": copy_src_values,
         }
-        print(dest_range)
-        print(copy_src_values)
         # Make new headers
         sheet.values().update(
             spreadsheetId=spreadsheetId,
@@ -252,7 +259,7 @@ def create_new_sheets_with_template(
 
         logger.info(f"Row {row_number} copied from {source_sheet_name} to {target_sheet_name}.")
     except Exception as e:
-        logger.error(f"An error occurred: {e}")
+        logger.error(f"Error: {e}")
 
 def append_data_to_sheet(
     spreadsheetId, 
@@ -268,7 +275,7 @@ def append_data_to_sheet(
         update_body = {
             "values": data,
         }
-        print(dest_range)
+        logger.info(dest_range)
         # Make new headers
         sheet.values().append(
             spreadsheetId=spreadsheetId,
@@ -276,55 +283,58 @@ def append_data_to_sheet(
             valueInputOption='USER_ENTERED',
             body=update_body
         ).execute()
-        print("Append DONE.")
+        logger.info("Append DONE.")
     except Exception as e:
-        print(f"An error occurred: {e}", sheet_name)
+        logger.error(f"Error: {e}", sheet_name)
 
 def write_to_gsheet(
         data: Dict[str, List[str]], 
         spreadsheetId: str, 
         sheet_name: str) -> None:
-    creds = check_credentials()
-    service = build('sheets', 'v4', credentials=creds)
-    sheet = service.spreadsheets()
-    sheet_name = "Source_News_BlockMedia"
+    try:
+        creds = check_credentials()
+        service = build('sheets', 'v4', credentials=creds)
+        sheet = service.spreadsheets()
+        sheet_name = "Source_News_BlockMedia"
 
-    lr_A_col, value = check_last_value_in_column(
-        spreadsheetId=spreadsheetId,
-        sheet=sheet, 
-        sheet_name=sheet_name, 
-        column_search="A", 
-        start_row=2)
-    
-    if lr_A_col == -1:
-        start_row = 2
-        value = 1
-    else:
-        start_row = lr_A_col + 1
-        value = int(value[0]) + 1
-  
-    update_id = [[i] for i in range(value, value + len(data["title"]))] # Update ID
-    update_titles = [[title] for title in data["title"]] # Update titles
-    update_contents = [[content] for content in data["content"]] # Update contents
-    update_urls = [[news_url] for news_url in data["news_url"]] # Update URLs
-    update_date = [[str(datetime.now())] for _ in range(value, value + len(data["title"]))] # Update date
-
-
-    update_lst = [update_id, update_titles, update_contents, update_urls, update_date]
-    update_cols = ['A', 'B', 'C', 'F', 'M']
-
-    for val, col in zip(update_lst, update_cols):
-        update_range = f'{sheet_name}!{col}{start_row}:{col}{start_row + len(data["title"]) - 1}'
-        update_body = {'values': val}
-
-        sheet.values().update(
+        lr_A_col, value = check_last_value_in_column(
             spreadsheetId=spreadsheetId,
-            range=update_range,
-            valueInputOption='USER_ENTERED',
-            body=update_body
-        ).execute()
+            sheet=sheet, 
+            sheet_name=sheet_name, 
+            column_search="A", 
+            start_row=2)
+        
+        if lr_A_col == -1:
+            start_row = 2
+            value = 1
+        else:
+            start_row = lr_A_col + 1
+            value = int(value[0]) + 1
+    
+        update_id = [[i] for i in range(value, value + len(data["title"]))] # Update ID
+        update_titles = [[title] for title in data["title"]] # Update titles
+        update_contents = [[content] for content in data["content"]] # Update contents
+        update_urls = [[news_url] for news_url in data["news_url"]] # Update URLs
+        update_date = [[str(datetime.now())] for _ in range(value, value + len(data["title"]))] # Update date
 
-def get_value_from_row(gsheet_read, range_name, spreadsheetId):
+
+        update_lst = [update_id, update_titles, update_contents, update_urls, update_date]
+        update_cols = ['A', 'B', 'C', 'F', 'M']
+
+        for val, col in zip(update_lst, update_cols):
+            update_range = f'{sheet_name}!{col}{start_row}:{col}{start_row + len(data["title"]) - 1}'
+            update_body = {'values': val}
+
+            sheet.values().update(
+                spreadsheetId=spreadsheetId,
+                range=update_range,
+                valueInputOption='USER_ENTERED',
+                body=update_body
+            ).execute()
+    except Exception as e:
+        logger.error(f"Error: {e}")
+
+def get_value_from_row(gsheet_read, range_name, spreadsheetId) -> Union[str, None]:
     try:
         result_ = gsheet_read.read_from_gsheet(
             range_name=range_name, 
@@ -334,5 +344,5 @@ def get_value_from_row(gsheet_read, range_name, spreadsheetId):
             return None
         return result_["values"][0][0]
     except Exception as e:
-        logger.error(f"Error in function get_value_from_row : {e}")
+        logger.error(f"Error : {e}")
         return None

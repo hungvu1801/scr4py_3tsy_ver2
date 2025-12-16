@@ -2,16 +2,14 @@ from dotenv import load_dotenv
 import os
 import sys
 from googleapiclient.discovery import build
-from src.assets import update_cols_ideogram, update_cols_etsy
+import time
 
 from src.GSheetWriteRead import GSheetWrite, GSheetRead
 
 from src.ideogram.service import (
-    
     browse_site, 
     check_default_settings, 
-    generate_image, 
-    get_data_to_scrape,
+    generate_image
     )
 
 from src.open_driver import open_gemlogin_driver, close_gemlogin_driver
@@ -49,12 +47,6 @@ def controller() -> None:
     
     gsheet_read = GSheetRead(
         service=service,)
-    
-    row_generator = gsheet_read.filter_data_by_column_get_row(
-        filter_column="H", 
-        filter_value="Pending", 
-        spreadsheetId=spreadsheetId, 
-        sheet_name=sheet_name)
 
     try:
         driver_1 = open_gemlogin_driver(profile_id=profile_1)
@@ -62,61 +54,84 @@ def controller() -> None:
         # Create CSV file with timestamp
         browse_site(driver_1)
         check_default_settings(driver_1)
+        count_for_wait = 0
+        while count_for_wait <= 15:
+            # This loop is for getting continuously
+            row_generator = gsheet_read.filter_data_by_column_get_row(
+                filter_column="H", 
+                filter_value="Pending", 
+                spreadsheetId=spreadsheetId, 
+                sheet_name=sheet_name)
+            # Check for empty generator
+            gen = list(row_generator)
+            logger.info(f"gen list : {gen}")
+            if not gen:
+                time.sleep(120)
+                count_for_wait += 1
+                logger.info(f"Wait time {count_for_wait}")
+                continue
+            del gen
 
-        while True:
-            try:
-                row_num = next(row_generator)
-                prompt = gg_utils.get_value_from_row(
-                    gsheet_read=gsheet_read,
-                    range_name=f"{sheet_name}!I{row_num}", 
-                    spreadsheetId=spreadsheetId,)
-                logger.info(f"prompt at row {row_num}: {prompt}")
+            while True:
+                try:
+                    row_generator = gsheet_read.filter_data_by_column_get_row(
+                        filter_column="H", 
+                        filter_value="Pending", 
+                        spreadsheetId=spreadsheetId, 
+                        sheet_name=sheet_name)
+                    row_num = next(row_generator)
+                    prompt = gg_utils.get_value_from_row(
+                        gsheet_read=gsheet_read,
+                        range_name=f"{sheet_name}!I{row_num}", 
+                        spreadsheetId=spreadsheetId,)
+                    logger.info(f"prompt at row {row_num}: {prompt}")
 
-                if not prompt:
-                    logger.info(f"Skipping empty prompt at row {row_num}")
-                    continue
-                sku_name = gg_utils.get_value_from_row(
-                    gsheet_read=gsheet_read,
-                    range_name=f"{sheet_name}!A{row_num}", spreadsheetId=spreadsheetId,)
-                
-                if not sku_name:
-                    logger.info(f"Skipping empty prompt at row {row_num}")
-                    continue
+                    if not prompt:
+                        logger.info(f"Skipping empty prompt at row {row_num}")
+                        continue
+                    sku_name = gg_utils.get_value_from_row(
+                        gsheet_read=gsheet_read,
+                        range_name=f"{sheet_name}!A{row_num}", spreadsheetId=spreadsheetId,)
+                    
+                    if not sku_name:
+                        logger.info(f"Skipping empty prompt at row {row_num}")
+                        continue
 
-                img_url_sample = gg_utils.get_value_from_row(
-                    gsheet_read=gsheet_read,
-                    range_name=f"{sheet_name}!E{row_num}", spreadsheetId=spreadsheetId,)
+                    img_url_sample = gg_utils.get_value_from_row(
+                        gsheet_read=gsheet_read,
+                        range_name=f"{sheet_name}!E{row_num}", spreadsheetId=spreadsheetId,)
 
-                if img_url_sample:
-                    logger.info(img_url_sample)
-                    gg_utils.download_media(
-                        url=img_url_sample,
-                        media_type="img",
-                        name=f"{sku_name}.png",
-                        directory=IMAGE_DOWNLOAD_SAMPLE,)
+                    if img_url_sample:
+                        logger.info(img_url_sample)
+                        gg_utils.download_media(
+                            url=img_url_sample,
+                            media_type="img",
+                            name=f"{sku_name}.png",
+                            directory=IMAGE_DOWNLOAD_SAMPLE,)
 
-                if generate_image(
-                    driver_gen=driver_1, 
-                    driver_down=driver_2, 
-                    prompt=prompt, 
-                    sku_name=sku_name):
+                    if generate_image(
+                        driver_gen=driver_1, 
+                        driver_down=driver_2, 
+                        prompt=prompt, 
+                        sku_name=sku_name):
 
-                    gsheet_writer.write_to_gsheet_value(
-                        range_name=f"{sheet_name}!H{row_num}",
-                        spreadsheetId=spreadsheetId,
-                        data="Done"
-                    )
+                        gsheet_writer.write_to_gsheet_value(
+                            range_name=f"{sheet_name}!H{row_num}",
+                            spreadsheetId=spreadsheetId,
+                            data="Done"
+                        )
 
-            except StopIteration as e:
-                logger.info(f"No more data to scrape : {str(e)}")
-                break
-            except Exception as e:
-                logger.error(f"Error in controller: Error while getting data to scrape: {str(e)}")
-                break
-
+                except StopIteration as e:
+                    logger.info(f"No more data to scrape : {e}")
+                    break
+                except Exception as e:
+                    logger.error(f"Error while getting data to scrape: {e}")
+                    break
+    except KeyboardInterrupt:
+        logger.error(f"KeyboardInterrupt Detected.")
     except Exception as e:
-        logger.error(f"Error in controller: {str(e)}")
-    # finally:
-    #     close_gemlogin_driver(profile_id=profile_1)
-    #     close_gemlogin_driver(profile_id=profile_2)
+        logger.error(f"Error {e}")
+    finally:
+        close_gemlogin_driver(profile_id=profile_1)
+        close_gemlogin_driver(profile_id=profile_2)
 
