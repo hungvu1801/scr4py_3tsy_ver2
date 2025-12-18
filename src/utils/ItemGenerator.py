@@ -1,8 +1,8 @@
 import os
 from pandas import DataFrame
-from typing import Generator, Dict, Any, List, Union
-from src.sofontsy.elems import SofontsyElems
-from src.creative_fabrica.elems import CreateFabricaElems
+from typing import Generator, Any
+from src.sofontsy.elems import SofontsyItems
+from src.creative_fabrica.elems import CreateFabricaItems
 from .utils import get_imgs_and_zip
 
 upload_dir = os.path.join(os.getcwd(), "data")
@@ -11,19 +11,19 @@ upload_dir = os.path.join(os.getcwd(), "data")
 class ItemGenerator:
     def __init__(
         self,
-        ProcessingItem: Union[SofontsyElems, CreateFabricaElems],
+        ProcessingItem: SofontsyItems | CreateFabricaItems,
         platform: str,
         # df: DataFrame,
     ):
         # self.df = df
         self.platform = platform
-        self.ProcessingItem = ProcessingItem
+        self.processing_item = ProcessingItem
 
         # self.total_items = len(df)
         self.processed_items = 0
         self.skipped_items = 0
 
-    def generator_items(self, df) -> Generator[Dict[str, Any], None, None]:
+    def generator_items(self, df) -> Generator[dict[str, Any], None, None]:
         # logger.info(f"Starting to process {self.total_items} items from DataFrame")
 
         for index, item in df.iterrows():
@@ -33,7 +33,7 @@ class ItemGenerator:
             try:
                 # logger.info(f"Processing item {self.processed_items}/{self.total_items}: {item_id}")
 
-                item_dict: Dict[str, Any] = {}
+                item_dict: dict[str, Any] = {}
                 item_dir = os.path.join(upload_dir, item.loc["ID"])
 
                 item_dict["ID"] = item.loc["ID"]
@@ -50,13 +50,13 @@ class ItemGenerator:
                     self.skipped_items += 1
                     continue
 
-                img_files: List[str] = files.get("img_files")
+                img_files: list[str] = files.get("img_files")
                 zip_file: str = files.get("zip_file")[0]
                 item_dict["zip_file"] = zip_file
                 item_dict["img_files"] = img_files
-                if isinstance(self.ProcessingItem, SofontsyElems):
+                if isinstance(self.processing_item, SofontsyItems):
                     ...
-                item = self.ProcessingItem(**item_dict)
+                item = self.processing_item(**item_dict)
                 # logger.info(f"Successfully prepared item {item_id} for processing")
                 yield item
 
