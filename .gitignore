@@ -28,3 +28,6 @@ videos/*
 data/*
 
 *excel*/
+
+
+*.bat

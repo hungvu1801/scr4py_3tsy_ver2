@@ -1,7 +1,7 @@
 #!/bin/bash
 
 CHROME=/opt/google/chrome/google-chrome
-PROFILE=/home/mickeyvu0811/.config/google-chrome/1
+PROFILE=/home/mickeyvu0811/.config/google-chrome/2
 
 nohup "$CHROME" \
     --remote-debugging-port=9222 \

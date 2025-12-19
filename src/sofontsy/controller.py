@@ -1,4 +1,3 @@
-
 import os
 import sys
 
@@ -9,7 +8,6 @@ from src.utils.ItemGenerator import ItemGenerator
 from src.utils.utils import prompt_open_file
 from src.open_driver import open_gemlogin_driver, close_gemlogin_driver
 from .elems import SofontsyItems
-from src.utils.load_env import *
 
 from .service import UploadFile
 
@@ -19,7 +17,8 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 os.makedirs(f"{LOG_DIR}/sofontsy_logs", exist_ok=True)
 os.makedirs(f"{SOFONTSY_DATA_DIR}", exist_ok=True)
 
-logger = setup_logger(name="SoFontsyLog", log_dir=f"{LOG_DIR}/sofontsy_logs")
+logger = setup_logger(name="SofonsyLog", log_dir=f"{LOG_DIR}/sofontsy_logs")
+
 
 class Controller:
     def __init__(self, profile_id: str):

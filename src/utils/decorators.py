@@ -22,3 +22,23 @@ def selenium_exception_handler(func: Callable):
             logger_2.error(f"Error {func.__name__} {e}")
             return 0
     return wrapper
+
+class HandlerException():
+
+    def __init__(self, logger):
+        self.logger = logger
+
+    def selenium_exception_handler(self, func: Callable):
+        '''This is decorator to catch exception of executing a function.'''
+        @wraps(func)
+        def wrapper(*args, **kwargs) -> Any:
+            try:
+                result = func(*args, **kwargs)
+                return result
+            except (TimeoutException, StaleElementReferenceException, NoSuchElementException, WebDriverException) as e:
+                self.logger.error(f"Error {func.__name__} {e}")
+                return 0
+            except Exception as e:
+                self.logger.error(f"Error {func.__name__} {e}")
+                return 0
+        return wrapper
