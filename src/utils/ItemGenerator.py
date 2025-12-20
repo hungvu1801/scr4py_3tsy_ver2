@@ -8,12 +8,12 @@ from .utils import get_imgs_and_zip
 
 class ItemGenerator:
     def __init__(self, 
-            ProcessingItem: Union[SofontsyItems, CreateFabricaItems], 
+            processing_item: Union[SofontsyItems, CreateFabricaItems], 
             platform: str):
         # self.df = df
 
         self.platform = platform
-        self.ProcessingItem = ProcessingItem
+        self.processing_item = processing_item
         self.upload_dir = os.path.join(os.getcwd(), rf"data/{platform}")
         # self.total_items = len(df)
         self.processed_items = 0
@@ -22,7 +22,7 @@ class ItemGenerator:
     def generator_items(self, df) -> Generator[dict[str, Any], None, None]:
         # logger.info(f"Starting to process {self.total_items} items from DataFrame")
 
-        for index, item in df.iterrows():
+        for _, item in df.iterrows():
             self.processed_items += 1
             # item_id = item.get('ID', f'Row_{index}')
 
@@ -30,12 +30,12 @@ class ItemGenerator:
                 # logger.info(f"Processing item {self.processed_items}/{self.total_items}: {item_id}")
                 
                 item_dict: Dict[str, Any] = {}
-                if issubclass(self.ProcessingItem, CreateFabricaItems):
+                if issubclass(self.processing_item, CreateFabricaItems):
                     item_dict["category"] = item.loc["category"]
                     item_dict["ID"] = item.loc["ID"]
                     item_dir = os.path.join(self.upload_dir, item.loc["ID"])
 
-                elif issubclass(self.ProcessingItem, SofontsyItems):
+                elif issubclass(self.processing_item, SofontsyItems):
                     item_dict["Barcode"] = item.loc["Barcode"]
                     item_dir = os.path.join(self.upload_dir, item.loc["Barcode"])
                     item_dict["compare_at_price"] = str(item.loc["compare_at_price"])

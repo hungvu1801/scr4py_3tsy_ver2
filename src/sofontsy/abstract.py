@@ -14,6 +14,9 @@ class Upload:
     def next_step(self, upload_state: "UploadState"):
         self._upload_state = upload_state
         self._upload_state.upload = self
+        
+    def handle(self) -> int:
+        return self._upload_state.handle()
 
 
 class UploadState(ABC):

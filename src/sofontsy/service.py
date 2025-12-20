@@ -207,30 +207,8 @@ class UploadFile:
 
     @selenium_exception_handler
     def check_boxes(self) -> int:
-        logger.info("check_boxes")
-        time.sleep(1)
-        freebie_box = WebDriverWait(self.driver, 30).until(
-            EC.presence_of_element_located(
-                (By.XPATH, SofontsyElems.CHECKBOX_FREEBIE)))
-        scroll_to_elem(self.driver, freebie_box)
-        time.sleep(0.5)
-        freebie_box.click()
+        ...
         
-        deal_box = WebDriverWait(self.driver, 30).until(
-            EC.presence_of_element_located(
-                (By.XPATH, SofontsyElems.CHECKBOX_DEALS)))
-        scroll_to_elem(self.driver, deal_box)
-        time.sleep(0.5)
-        deal_box.click()
-        
-        term_box = WebDriverWait(self.driver, 30).until(
-            EC.presence_of_element_located(
-                (By.XPATH, SofontsyElems.CHECKBOX_TERMS)))
-        scroll_to_elem(self.driver, term_box)
-        time.sleep(1)
-        term_box.click()
-        return 1
-
     @selenium_exception_handler
     def click_submit(self) -> int:
         logger.info("click_submit")
