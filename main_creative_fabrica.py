@@ -12,9 +12,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "--profile", 
         nargs="+", 
-        choices=["1", "2", "3", "4"], 
+        choices=["1", "2", "3", "4", "5", "6"], 
         required=True,
-        help="Specify which profile(s) to run (e.g., --profile 1 2 3 4)"
+        help="Specify which profile(s) to run (e.g., --profile 1 2 3 4 5 6)"
     )
     args = parser.parse_args()
 
