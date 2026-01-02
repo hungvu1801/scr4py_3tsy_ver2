@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import List
 
+
 class CreateFabricaElems:
     PAGE_TITLE: str = "//div[@class='page-title']"
     PRODUCT: str = "//input[@name='title']"
@@ -18,6 +19,7 @@ class CreateFabricaElems:
     CHECKBOX_DEALS: str = "//input[@name='in_discount_deals']"
     CHECKBOX_TERMS: str = "//ins[@class='iCheck-helper']"
     SUBMIT: str = "//button[@type='submit']"
+
 
 @dataclass
 class CreateFabricaItems:
