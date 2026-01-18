@@ -25,8 +25,6 @@ def controller(profile_1: int, profile_2: int, row_search: int) -> None:
 
     spreadsheetId = os.getenv("SPREADSHEET_ID")
     sheet_name = os.getenv("SHEET_NAME_IMG")
-    spreadsheetId = os.getenv("SPREADSHEET_ID")
-    sheet_name = os.getenv("SHEET_NAME_IMG")
 
     credentials = gg_utils.check_credentials()
     service = build("sheets", "v4", credentials=credentials)
