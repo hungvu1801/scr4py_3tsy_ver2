@@ -10,8 +10,6 @@ if __name__ == "__main__":
     parser.add_argument(
         "-p",
         "--profile",
-        nargs="+",
-        choices=["1", "2", "3", "4", "5"],
         required=True,
         help="Specify which profile(s) to run (e.g., --profile 1 2 3 4)",
     )
@@ -24,6 +22,6 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
-    controller = Controller(profile_id=args.profile[0], project_url=args.project_url)
+    controller = Controller(profile_id=args.profile, project_url=args.project_url)
 
     controller.main()
