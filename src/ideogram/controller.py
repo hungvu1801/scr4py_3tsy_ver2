@@ -6,7 +6,7 @@ import time
 
 from src.GSheetWriteRead import GSheetWrite, GSheetRead
 
-from src.ideogram.service import browse_site, check_default_settings, generate_image
+from src.ideogram.service import browse_site, generate_image
 
 from src.open_driver import open_gemlogin_driver, close_gemlogin_driver
 from src.logger import setup_logger
@@ -20,15 +20,13 @@ os.makedirs(f"{LOG_DIR}/ideogram_logs", exist_ok=True)
 logger = setup_logger(name="IdeogramLogger", log_dir=f"{LOG_DIR}/ideogram_logs")
 
 
-def controller() -> None:
+def controller(profile_1: int, profile_2: int, row_search: int) -> None:
     driver_1 = driver_2 = None
 
     spreadsheetId = os.getenv("SPREADSHEET_ID")
     sheet_name = os.getenv("SHEET_NAME_IMG")
     spreadsheetId = os.getenv("SPREADSHEET_ID")
     sheet_name = os.getenv("SHEET_NAME_IMG")
-    profile_1 = int(os.getenv("PROFILE_ID_1", "2"))
-    profile_2 = int(os.getenv("PROFILE_ID_2", "3"))
 
     credentials = gg_utils.check_credentials()
     service = build("sheets", "v4", credentials=credentials)
@@ -59,6 +57,7 @@ def controller() -> None:
                 filter_value="Pending",
                 spreadsheetId=spreadsheetId,
                 sheet_name=sheet_name,
+                row_search=row_search,
             )
             # Check for empty generator
             gen = list(row_generator)
@@ -77,6 +76,7 @@ def controller() -> None:
                         filter_value="Pending",
                         spreadsheetId=spreadsheetId,
                         sheet_name=sheet_name,
+                        row_search=row_search,
                     )
                     row_num = next(row_generator)
                     prompt = gg_utils.get_value_from_row(
@@ -133,7 +133,7 @@ def controller() -> None:
                     logger.error(f"Error while getting data to scrape: {e}")
                     break
     except KeyboardInterrupt:
-        logger.error(f"KeyboardInterrupt Detected.")
+        logger.error("KeyboardInterrupt Detected.")
     except Exception as e:
         logger.error(f"Error {e}")
     finally:

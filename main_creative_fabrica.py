@@ -1,18 +1,16 @@
-import sys
-import os
 import argparse
-from src.utils.load_env import *
+import os
 from src.creative_fabrica.controller import controller
 
 
-
-
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Run controller with selected profiles.")
+    parser = argparse.ArgumentParser(
+        description="Run controller with selected profiles."
+    )
     parser.add_argument(
-        "--profile", 
+        "--profile",
         required=True,
-        help="Specify which profile(s) to run (e.g., --profile 6)"
+        help="Specify which profile(s) to run (e.g., --profile 6)",
     )
     args = parser.parse_args()
 

@@ -5,17 +5,20 @@ from src.logger import setup_logger
 
 logger = setup_logger(name="GSheetLogger", log_dir="logs")
 
+
 class GSheetWrite:
     def __init__(self, service):
         self.service = service
 
-    def write_to_gsheet_value(self, spreadsheetId: str, range_name: str, data: Union[str, list]):
+    def write_to_gsheet_value(
+        self, spreadsheetId: str, range_name: str, data: Union[str, list]
+    ):
         try:
             if isinstance(data, str):
-                values = [[data]] # [[data]]
+                values = [[data]]  # [[data]]
             elif isinstance(data, list):
-                values = data # [["data1", "data2"], ["data3", "data4"]]
-           
+                values = data  # [["data1", "data2"], ["data3", "data4"]]
+
             body = {"values": values}
             result = (
                 self.service.spreadsheets()
@@ -31,7 +34,7 @@ class GSheetWrite:
             logger.info(f"{result.get('updatedCells')} cells updated.")
             return result
         except HttpError as err:
-            logger.error(f'GSheetWrite: An error occurred: {err}')
+            logger.error(f"GSheetWrite: An error occurred: {err}")
             return
 
     def check_last_value_in_column(self, spreadsheetId, range_name) -> int:
@@ -46,30 +49,30 @@ class GSheetWrite:
                 .values()
                 .get(spreadsheetId=spreadsheetId, range=range_name)
                 .execute()
-                )
+            )
 
-            _values = _result.get('values', [])
+            _values = _result.get("values", [])
 
-            last_row_index = -1 # Flag for not hit the last row
+            last_row_index = -1  # Flag for not hit the last row
             for i in reversed(range(len(_values))):
                 if _values[i] and _values[i][0].strip():  # if not empty or just spaces
-                    last_row_index = i # Because we start from row i in the sheet
+                    last_row_index = i  # Because we start from row i in the sheet
                     break
-            if last_row_index == -1: # If not hit the last row
-                logger.info(f"No non-empty values found.")
+            if last_row_index == -1:  # If not hit the last row
+                logger.info("No non-empty values found.")
                 return 2
             return last_row_index + 1
 
         except Exception as err:
-            logger.error(f'GSheetWrite: An error occurred: {err}')
+            logger.error(f"GSheetWrite: An error occurred: {err}")
             return 2
-            
+
+
 class GSheetRead:
     def __init__(self, service):
         self.service = service
 
     def read_from_gsheet(self, range_name, spreadsheetId) -> Dict[str, Any]:
-
         try:
             return (
                 self.service.spreadsheets()
@@ -80,26 +83,33 @@ class GSheetRead:
         except HttpError as error:
             logger.error(f"An error occurred: {error}")
             return error
-    
-    def filter_data_by_column_get_row(self, filter_column: str, filter_value:str, spreadsheetId: str, sheet_name: str) -> Generator[int, None, None]:
+
+    def filter_data_by_column_get_row(
+        self,
+        filter_column: str,
+        filter_value: str,
+        spreadsheetId: str,
+        sheet_name: str,
+        row_search: int = 1,
+    ) -> Generator[int, None, None]:
         """
         Filter data by column and value
         """
         try:
-            range_name = f"{sheet_name}!{filter_column}1:{filter_column}"
+            range_name = f"{sheet_name}!{filter_column}{row_search}:{filter_column}"
             result = self.read_from_gsheet(range_name, spreadsheetId)
-            values = result.get('values', [])
+            values = result.get("values", [])
             if not values:
                 logger.warning("No data found in the sheet")
                 return
-            for i, row in enumerate(values[1:], start=2):
+            for i, row in enumerate(values[1:], start=row_search + 1):
                 if not row or not row[0].strip():
                     logger.warning(f"Row {i} is empty or just spaces. Skipping.")
                     continue
                 if row[0] == filter_value:
                     logger.info(f"Found value '{filter_value}' in row {i}.")
                     yield i
-            
+
         except Exception as err:
-            logger.error(f'GSheetRead: An error occurred: {err}')
+            logger.error(f"GSheetRead: An error occurred: {err}")
             return
