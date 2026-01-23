@@ -217,14 +217,14 @@ class UploadFile:
         time.sleep(0.5)
         freebie_box.click()
 
-        deal_box = WebDriverWait(self.driver, 30).until(
-            EC.presence_of_element_located(
-                (By.XPATH, CreateFabricaElems.CHECKBOX_DEALS)
-            )
-        )
-        scroll_to_elem(self.driver, deal_box)
-        time.sleep(0.5)
-        deal_box.click()
+        # deal_box = WebDriverWait(self.driver, 30).until(
+        #     EC.presence_of_element_located(
+        #         (By.XPATH, CreateFabricaElems.CHECKBOX_DEALS)
+        #     )
+        # )
+        # scroll_to_elem(self.driver, deal_box)
+        # time.sleep(0.5)
+        # deal_box.click()
 
         term_box = WebDriverWait(self.driver, 30).until(
             EC.presence_of_element_located(
