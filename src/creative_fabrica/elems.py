@@ -15,8 +15,10 @@ class CreateFabricaElems:
     UPLOAD_PRODUCT_FILE: str = "(//div[@class='fileuploader-input-button'])[2]"
     UPLOAD_PRODUCT_FILE_INPUT: str = "//input[@id='product_files']"
     UPLOAD_ITEMS_STATUS: str = "//div[@class='column-actions']/a"
-    CHECKBOX_FREEBIE: str = "//input[@name='in_freebie']"
-    CHECKBOX_DEALS: str = "//input[@name='in_discount_deals']"
+    # CHECKBOX_FREEBIE: str = "//input[@name='in_freebie']"
+    # CHECKBOX_DEALS: str = "//input[@name='in_discount_deals']"
+    CHECKBOX_FREEBIE: str = "(//div[@id='product-property-checklist']/div)[1]"
+    CHECKBOX_DEALS: str = "(//div[@id='product-property-checklist']/div)[2]"
     CHECKBOX_TERMS: str = "//ins[@class='iCheck-helper']"
     SUBMIT: str = "//button[@type='submit']"
 
