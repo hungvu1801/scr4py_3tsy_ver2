@@ -1,6 +1,7 @@
 class IdeoElems:
-    main_text_box: str = "//textarea[@placeholder='Describe what you want to see']"
-    generate_button: str = "//button/p[contains(text(), 'Generate')]"
+    main_text_box: str = "//textarea[@placeholder='Generate new or upload & edit...']"
+    # generate_button: str = "//button/p[contains(text(), 'Generate')]"
+    generate_button: str = "//button[@class='nova-pill-button nova-pill-button-round']"
     policy_elem: str = "//p[contains(text(),'meet our content policy')]"
 
     generating_notifier: str = "//div[@class='MuiBox-root css-18o6q3k']/p"
