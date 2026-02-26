@@ -1,5 +1,5 @@
 class IdeoElems:
-    main_text_box: str = "//textarea[@placeholder='Generate new or upload & edit...']"
+    main_text_box: str = "//p[@data-placeholder='Generate new or upload & edit...']"
     # generate_button: str = "//button/p[contains(text(), 'Generate')]"
     generate_button: str = "//button[@class='nova-pill-button nova-pill-button-round']"
     policy_elem: str = "//p[contains(text(),'meet our content policy')]"
